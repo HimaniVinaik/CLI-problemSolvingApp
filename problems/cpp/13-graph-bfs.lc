@@ -113,7 +113,7 @@ topics: Hash Table, String, Breadth-First Search
 params: startGene, endGene, bank
 time: O(B · L · 4)
 space: O(B)
-bench: n=64..32768 time=n space=n unit=bank_size_(L_=_8)
+bench: n=64..8192 time=n space=n unit=bank_size_(L_=_8)
 
 === description
 A gene is an 8-character string of `'A'`, `'C'`, `'G'` and `'T'`. A **mutation** changes exactly one character. Every intermediate gene must be in the gene `bank` to be valid (the start gene doesn't need to be).
@@ -141,6 +141,30 @@ public:
 LC_DRIVER {
     h.solve(&Solution::minMutation);
     h.gen([](lc::Gen &g, int n) {
+        if (n > 40) {   // benchmark: one connected bank (random walk), end gene isolated -> BFS explores all
+            std::string start = g.str(8, "ACGT");
+            std::vector<std::string> v{start};
+            std::set<std::string> seen{start};
+            while ((int)v.size() < n) {
+                std::string w = g.pick(v);
+                w[g.irange(0, 7)] = "ACGT"[g.irange(0, 3)];
+                if (seen.insert(w).second) v.push_back(w);
+            }
+            std::string end;
+            while (true) {
+                end = g.str(8, "ACGT");
+                bool isolated = !seen.count(end);
+                for (int i = 0; i < 8 && isolated; ++i)
+                    for (char ch : std::string("ACGT")) {
+                        std::string x = end; x[i] = ch;
+                        if (x != end && seen.count(x)) { isolated = false; break; }
+                    }
+                if (isolated) break;
+            }
+            v.push_back(end);
+            g.shuffle(v);
+            return lc::lines(start, end, v);
+        }
         std::string start = g.str(8, "ACGT");
         std::set<std::string> bank;
         std::string cur = start;
@@ -257,6 +281,20 @@ LC_DRIVER {
     h.solve(&Solution::ladderLength);
     h.gen([](lc::Gen &g, int n) {
         n = std::max(n, 1);
+        if (n > 40) {   // benchmark: connected word list (random walk), "zzzzz" unreachable
+            std::string begin = g.str(5, "abcdefghij");
+            std::vector<std::string> v;
+            std::set<std::string> seen{begin};
+            std::vector<std::string> pool{begin};
+            while ((int)v.size() < n) {
+                std::string w = g.pick(pool);
+                w[g.irange(0, 4)] = "abcdefghij"[g.irange(0, 9)];
+                if (seen.insert(w).second) { v.push_back(w); pool.push_back(w); }
+            }
+            v.push_back("zzzzz");
+            g.shuffle(v);
+            return lc::lines(begin, std::string("zzzzz"), v);
+        }
         std::string alpha = n <= 40 ? "abc" : "abcdefghij";
         int L = n <= 40 ? g.irange(1, 4) : 5;
         std::string begin = g.str(L, alpha);

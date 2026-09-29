@@ -7,7 +7,7 @@ topics: Tree, Depth-First Search, Binary Search Tree, Binary Tree
 params: root
 time: O(n)
 space: O(h)
-bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+bench: n=64..1048576 time=n space=1 unit=number_of_nodes
 
 === description
 Given the `root` of a **binary search tree**, return the minimum absolute difference between the values of any two different nodes.
@@ -97,7 +97,7 @@ topics: Tree, Depth-First Search, Binary Search Tree, Binary Tree
 params: root, k
 time: O(h + k)
 space: O(h)
-bench: n=64..1048576 time=n space=logn unit=number_of_nodes_(k_=_n/2)
+bench: n=64..1048576 time=n space=1 unit=number_of_nodes_(k_=_n/2)
 
 === description
 Given the `root` of a binary search tree and an integer `k`, return the `k`-th smallest value (1-indexed) among all node values.

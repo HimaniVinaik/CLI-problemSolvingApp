@@ -1,0 +1,652 @@
+@@ category: Backtracking
+
+@@@ problem 17 letter-combinations-of-a-phone-number
+title: Letter Combinations of a Phone Number
+difficulty: Medium
+topics: Hash Table, String, Backtracking
+params: digits
+time: O(4^n · n)
+space: O(n) extra (output excluded)
+stress: 4
+bench: n=5..10 step=+1 time=4^n space=4^n unit=number_of_digits_(all_4-letter_keys)
+
+=== description
+Given a string of digits `2-9`, return all letter combinations the number could represent on a phone keypad, in any order (the judge sorts them).
+
+The mapping is `2: abc, 3: def, 4: ghi, 5: jkl, 6: mno, 7: pqrs, 8: tuv, 9: wxyz`. An empty input has no combinations.
+
+=== constraints
+- `0 <= digits.length <= 4`
+- `digits[i]` is in `'2'..'9'`
+
+=== hints
+- Build the combination one digit at a time; for each digit try each of its letters, recurse, then undo (backtrack).
+
+=== template
+class Solution {
+public:
+    vector<string> letterCombinations(string digits) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::letterCombinations).sort_output();
+    h.gen([](lc::Gen &g, int n) {
+        if (n <= 4) return lc::lines(g.str(g.irange(0, n), "23456789"));
+        return lc::lines(g.str(n, "79"));   // benchmark: 4 letters per key
+    });
+}
+
+=== approach
+**Backtracking**: keep a partial string `cur`. At depth `i`, append each letter mapped to `digits[i]`, recurse to depth `i + 1`, then remove the letter. When `cur` has as many letters as there are digits, it's a complete combination.
+
+There are up to `4^n` combinations, each of length `n`, so the output alone is O(4^n · n). The recursion itself needs only O(n) extra space.
+
+=== solution
+class Solution {
+    const vector<string> keys = {"", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
+    vector<string> out;
+    string cur;
+
+    void build(const string &digits, size_t i) {
+        if (i == digits.size()) {            // one full combination
+            out.push_back(cur);
+            return;
+        }
+        for (char c : keys[digits[i] - '0']) {
+            cur.push_back(c);                // choose
+            build(digits, i + 1);            // explore
+            cur.pop_back();                  // un-choose
+        }
+    }
+
+public:
+    vector<string> letterCombinations(string digits) {
+        out.clear();
+        cur.clear();
+        if (digits.empty()) return out;
+        build(digits, 0);
+        return out;
+    }
+};
+
+=== examples
+"23"
+> ["ad","ae","af","bd","be","bf","cd","ce","cf"]
+
+""
+> []
+
+"2"
+> ["a","b","c"]
+
+=== tests
+"7"
+> ["p","q","r","s"]
+
+"79"
+> ["pw","px","py","pz","qw","qx","qy","qz","rw","rx","ry","rz","sw","sx","sy","sz"]
+
+"234"
+> ["adg","adh","adi","aeg","aeh","aei","afg","afh","afi","bdg","bdh","bdi","beg","beh","bei","bfg","bfh","bfi","cdg","cdh","cdi","ceg","ceh","cei","cfg","cfh","cfi"]
+
+@@@ problem 77 combinations
+title: Combinations
+difficulty: Medium
+topics: Backtracking
+params: n, k
+time: O(k · C(n, k))
+space: O(k) extra (output excluded)
+stress: 10
+bench: n=10..20 step=+1 time=2^n space=2^n unit=n_(with_k_=_n/2)
+
+=== description
+Given integers `n` and `k`, return all possible combinations of `k` numbers chosen from `1..n`. The order of the combinations and of the numbers inside them does not matter (the judge sorts both).
+
+=== constraints
+- `1 <= n <= 20`
+- `1 <= k <= n`
+
+=== hints
+- Choose numbers in increasing order to avoid duplicates: after picking `x`, only consider `x + 1 .. n`.
+- Prune: if there aren't enough numbers left to reach `k`, stop early.
+
+=== template
+class Solution {
+public:
+    vector<vector<int>> combine(int n, int k) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::combine).sort_deep();
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        return lc::lines(n, n >= 11 ? n / 2 : g.irange(1, n));
+    });
+}
+
+=== approach
+**Backtracking in increasing order.** `pick(start)` tries each number `x` from `start` upward, appends it, recurses with `start = x + 1`, then removes it. When the combination has `k` numbers, record it.
+
+Pruning: if `cur` still needs `k - cur.size()` numbers, `x` can go at most up to `n - (k - cur.size()) + 1`; beyond that there aren't enough numbers left.
+
+=== solution
+class Solution {
+    vector<vector<int>> out;
+    vector<int> cur;
+
+    void pick(int start, int n, int k) {
+        if ((int)cur.size() == k) { out.push_back(cur); return; }
+        int need = k - cur.size();
+        for (int x = start; x <= n - need + 1; ++x) {   // leave room for the rest
+            cur.push_back(x);
+            pick(x + 1, n, k);
+            cur.pop_back();
+        }
+    }
+
+public:
+    vector<vector<int>> combine(int n, int k) {
+        out.clear();
+        cur.clear();
+        pick(1, n, k);
+        return out;
+    }
+};
+
+=== examples
+4
+2
+> [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
+
+1
+1
+> [[1]]
+
+=== tests
+3
+3
+> [[1,2,3]]
+
+5
+1
+> [[1],[2],[3],[4],[5]]
+
+5
+3
+> [[1,2,3],[1,2,4],[1,2,5],[1,3,4],[1,3,5],[1,4,5],[2,3,4],[2,3,5],[2,4,5],[3,4,5]]
+
+@@@ problem 46 permutations
+title: Permutations
+difficulty: Medium
+topics: Array, Backtracking
+params: nums
+time: O(n · n!)
+space: O(n) extra (output excluded)
+stress: 6
+bench: n=3..9 step=+1 time=n! space=n! unit=nums.length
+
+=== description
+Given an array `nums` of **distinct** integers, return all possible permutations, in any order (the judge sorts them).
+
+=== constraints
+- `1 <= nums.length <= 6`
+- `-10 <= nums[i] <= 10`, all distinct
+
+=== hints
+- Build a permutation position by position, choosing among the unused numbers.
+- Or permute in place: swap each candidate into position `i`, recurse on `i + 1`, swap back.
+
+=== template
+class Solution {
+public:
+    vector<vector<int>> permute(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::permute).sort_output();
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.distinct(std::max(n, 1), -10, 10)); });
+}
+
+=== approach
+**In-place backtracking with swaps.** For position `i`, every element in `nums[i..]` can be placed there: swap it into position `i`, recurse on `i + 1`, then swap back to restore the array. When `i` reaches the end, `nums` holds a complete permutation.
+
+There are `n!` permutations of length `n`, so producing them costs O(n · n!).
+
+=== solution
+class Solution {
+    vector<vector<int>> out;
+
+    void permuteFrom(vector<int> &nums, size_t i) {
+        if (i == nums.size()) { out.push_back(nums); return; }
+        for (size_t j = i; j < nums.size(); ++j) {
+            swap(nums[i], nums[j]);        // put nums[j] at position i
+            permuteFrom(nums, i + 1);
+            swap(nums[i], nums[j]);        // undo
+        }
+    }
+
+public:
+    vector<vector<int>> permute(vector<int>& nums) {
+        out.clear();
+        permuteFrom(nums, 0);
+        return out;
+    }
+};
+
+=== examples
+[1,2,3]
+> [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+
+[0,1]
+> [[0,1],[1,0]]
+
+[1]
+> [[1]]
+
+=== tests
+[-1,5]
+> [[-1,5],[5,-1]]
+
+[4,-3,0]
+> [[-3,0,4],[-3,4,0],[0,-3,4],[0,4,-3],[4,-3,0],[4,0,-3]]
+
+@@@ problem 39 combination-sum
+title: Combination Sum
+difficulty: Medium
+topics: Array, Backtracking
+params: candidates, target
+time: exponential in target / min(candidates)
+space: O(target / min(candidates))
+stress: 20
+bench: off
+
+=== description
+Given an array of **distinct** positive integers `candidates` and a `target`, return all **unique** combinations of candidates that sum to `target`. The same number may be used an **unlimited** number of times. Two combinations are the same if they use each number the same number of times.
+
+Any order is accepted (the judge sorts the combinations and their contents).
+
+=== constraints
+- `1 <= candidates.length <= 30`
+- `2 <= candidates[i] <= 40`, all distinct
+- `1 <= target <= 40`
+
+=== hints
+- To avoid duplicates like `[2,3]` and `[3,2]`, only allow choosing candidates at index `>= ` the last chosen index.
+- Sort the candidates so you can stop as soon as a candidate exceeds the remaining target.
+
+=== template
+class Solution {
+public:
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::combinationSum).sort_deep();
+    h.gen([](lc::Gen &g, int n) {
+        return lc::lines(g.distinct(g.irange(1, std::min(8, std::max(1, n))), 2, 40), g.irange(1, std::min(40, 8 + n)));
+    });
+}
+
+=== approach
+Sort the candidates and backtrack with a `start` index: from position `i`, the next number may be `candidates[i]` again (unlimited reuse) or any later candidate, but never an earlier one. That makes every multiset appear in exactly one (non-decreasing) order, so there are no duplicates. Because the array is sorted, once a candidate exceeds the remaining target, all later ones do too, so we stop the loop.
+
+=== solution
+class Solution {
+    vector<vector<int>> out;
+    vector<int> cur;
+
+    void search(const vector<int> &c, size_t start, int remaining) {
+        if (remaining == 0) { out.push_back(cur); return; }
+        for (size_t i = start; i < c.size() && c[i] <= remaining; ++i) {
+            cur.push_back(c[i]);
+            search(c, i, remaining - c[i]);   // i, not i+1: reuse allowed
+            cur.pop_back();
+        }
+    }
+
+public:
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        sort(candidates.begin(), candidates.end());
+        out.clear();
+        cur.clear();
+        search(candidates, 0, target);
+        return out;
+    }
+};
+
+=== examples
+[2,3,6,7]
+7
+> [[2,2,3],[7]]
+
+[2,3,5]
+8
+> [[2,2,2,2],[2,3,3],[3,5]]
+
+[2]
+1
+> []
+
+=== tests
+[1]
+1
+> [[1]]
+
+[7,3,2]
+18
+> [[2,2,2,2,2,2,2,2,2],[2,2,2,2,2,2,3,3],[2,2,2,2,3,7],[2,2,2,3,3,3,3],[2,2,7,7],[2,3,3,3,7],[3,3,3,3,3,3]]
+
+[8,7,4,3]
+11
+> [[3,4,4],[3,8],[4,7]]
+
+@@@ problem 52 n-queens-ii
+title: N-Queens II
+difficulty: Hard
+topics: Backtracking
+params: n
+time: O(n!)
+space: O(n)
+stress: 9
+bench: n=4..12 step=+1 time=n! space=n unit=board_size
+
+=== description
+The **n-queens** puzzle asks how to place `n` queens on an `n x n` chessboard so that no two queens attack each other (no two share a row, column or diagonal).
+
+Given `n`, return the **number** of distinct solutions.
+
+=== constraints
+- `1 <= n <= 9`
+
+=== hints
+- Place one queen per row. For each row, try every column that is not attacked.
+- Track attacked columns and both diagonals: cells on the same `\` diagonal share `row - col`, cells on the same `/` diagonal share `row + col`.
+
+=== template
+class Solution {
+public:
+    int totalNQueens(int n) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::totalNQueens);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(std::max(1, std::min(n, 12))); });
+}
+
+=== approach
+Backtrack **row by row**: every row gets exactly one queen, so we only choose its column. A column is allowed if no earlier queen uses the same column, the same `row - col` diagonal, or the same `row + col` anti-diagonal. Keep three sets as bit masks so each check is O(1); place, recurse to the next row, then remove the queen. Reaching row `n` means one complete solution.
+
+=== solution
+class Solution {
+    int n = 0, count = 0;
+
+    // cols / diag / anti: bit masks of attacked columns and diagonals
+    void place(int row, unsigned cols, unsigned long long diag, unsigned long long anti) {
+        if (row == n) { ++count; return; }
+        for (int c = 0; c < n; ++c) {
+            unsigned long long d = 1ULL << (row - c + n), a = 1ULL << (row + c);
+            if ((cols >> c & 1) || (diag & d) || (anti & a)) continue;   // attacked
+            place(row + 1, cols | (1u << c), diag | d, anti | a);
+        }
+    }
+
+public:
+    int totalNQueens(int n) {
+        this->n = n;
+        count = 0;
+        place(0, 0, 0, 0);
+        return count;
+    }
+};
+
+=== examples
+4
+> 2
+: There are two ways to place 4 queens on a 4x4 board.
+
+1
+> 1
+
+=== tests
+2
+> 0
+
+3
+> 0
+
+5
+> 10
+
+8
+> 92
+
+9
+> 352
+
+@@@ problem 22 generate-parentheses
+title: Generate Parentheses
+difficulty: Medium
+topics: String, Dynamic Programming, Backtracking
+params: n
+time: O(4^n / √n)
+space: O(n) extra (output excluded)
+stress: 8
+bench: n=4..12 step=+1 time=4^n space=4^n unit=pairs_of_parentheses
+
+=== description
+Given `n` pairs of parentheses, return all combinations of **well-formed** parentheses, in any order (the judge sorts them).
+
+=== constraints
+- `1 <= n <= 8`
+
+=== hints
+- Add `'('` while you still have some left; add `')'` only if it wouldn't close more than you opened.
+
+=== template
+class Solution {
+public:
+    vector<string> generateParenthesis(int n) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::generateParenthesis).sort_output();
+    h.gen([](lc::Gen &g, int n) { return lc::lines(std::max(1, std::min(n, 12))); });
+}
+
+=== approach
+Backtrack while tracking how many `(` and `)` have been used. You may add `(` if fewer than `n` have been used, and `)` only if fewer `)` than `(` have been used, so the prefix never becomes invalid. Every leaf of this search is a valid string, so no work is wasted. The number of results is the Catalan number C(n) ≈ 4^n / (n^1.5 √π).
+
+=== solution
+class Solution {
+    vector<string> out;
+    string cur;
+
+    void build(int open, int close, int n) {
+        if ((int)cur.size() == 2 * n) { out.push_back(cur); return; }
+        if (open < n) {                  // can still open
+            cur.push_back('(');
+            build(open + 1, close, n);
+            cur.pop_back();
+        }
+        if (close < open) {              // can close without going negative
+            cur.push_back(')');
+            build(open, close + 1, n);
+            cur.pop_back();
+        }
+    }
+
+public:
+    vector<string> generateParenthesis(int n) {
+        out.clear();
+        cur.clear();
+        build(0, 0, n);
+        return out;
+    }
+};
+
+=== examples
+3
+> ["((()))","(()())","(())()","()(())","()()()"]
+
+1
+> ["()"]
+
+=== tests
+2
+> ["(())","()()"]
+
+4
+> ["(((())))","((()()))","((())())","((()))()","(()(()))","(()()())","(()())()","(())(())","(())()()","()((()))","()(()())","()(())()","()()(())","()()()()"]
+
+@@@ problem 79 word-search
+title: Word Search
+difficulty: Medium
+topics: Array, String, Backtracking, Depth-First Search, Matrix
+params: board, word
+time: O(m · n · 3^L)
+space: O(L)
+stress: 20
+bench: off
+
+=== description
+Given an `m x n` grid of characters `board` and a string `word`, return `true` if `word` exists in the grid.
+
+The word is formed by letters of sequentially **adjacent** cells (horizontal or vertical neighbours). The same cell may not be used more than once.
+
+Follow-up: could you use search pruning to make it faster on larger boards?
+
+=== constraints
+- `1 <= m, n <= 6`
+- `1 <= word.length <= 15`
+- `board` and `word` consist of English letters
+
+=== hints
+- DFS from every cell that matches `word[0]`.
+- Mark cells on the current path (e.g. overwrite with `'#'`) and restore them when backtracking.
+- Pruning: if the board doesn't contain enough of some letter, answer `false` immediately.
+
+=== template
+class Solution {
+public:
+    bool exist(vector<vector<char>>& board, string word) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::exist);
+    h.gen([](lc::Gen &g, int) {
+        int r = g.irange(1, 5), c = g.irange(1, 5);
+        std::vector<std::vector<char>> b(r, std::vector<char>(c));
+        for (auto &row : b) for (auto &x : row) x = "ABCab"[g.irange(0, 4)];
+        std::string w;
+        if (g.coin(0.5)) {
+            int y = g.irange(0, r - 1), x = g.irange(0, c - 1);
+            std::set<std::pair<int, int>> used;
+            for (int k = 0, len = g.irange(1, 8); k < len; ++k) {
+                w += b[y][x];
+                used.insert({y, x});
+                std::vector<std::pair<int, int>> nb;
+                for (auto [dy, dx] : std::vector<std::pair<int, int>>{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                    int ny = y + dy, nx = x + dx;
+                    if (ny >= 0 && ny < r && nx >= 0 && nx < c && !used.count({ny, nx})) nb.push_back({ny, nx});
+                }
+                if (nb.empty()) break;
+                std::tie(y, x) = g.pick(nb);
+            }
+        } else {
+            w = g.str(g.irange(1, 6), "ABCab");
+        }
+        return lc::lines(b, w);
+    });
+}
+
+=== approach
+Try every cell as a starting point and run a **backtracking DFS** that matches `word[i]` at cell `(r, c)`:
+
+- out of bounds, or the letter differs: fail;
+- the last letter matched: success;
+- otherwise temporarily mark the cell (`'#'`) so the path can't reuse it, try the four neighbours for `word[i + 1]`, and restore the cell.
+
+A cheap pruning step first compares letter counts: if the board lacks some letter the word needs, the answer is `false` without searching.
+
+=== solution
+class Solution {
+    int m = 0, n = 0;
+
+    bool dfs(vector<vector<char>> &b, const string &w, int r, int c, size_t i) {
+        if (r < 0 || r >= m || c < 0 || c >= n || b[r][c] != w[i]) return false;
+        if (i + 1 == w.size()) return true;          // matched the whole word
+        char saved = b[r][c];
+        b[r][c] = '#';                               // mark as used on this path
+        bool found = dfs(b, w, r + 1, c, i + 1) || dfs(b, w, r - 1, c, i + 1) ||
+                     dfs(b, w, r, c + 1, i + 1) || dfs(b, w, r, c - 1, i + 1);
+        b[r][c] = saved;                             // backtrack
+        return found;
+    }
+
+public:
+    bool exist(vector<vector<char>>& board, string word) {
+        m = board.size();
+        n = board[0].size();
+        // Pruning: the board must contain enough of every letter.
+        int have[128] = {0}, need[128] = {0};
+        for (auto &row : board) for (char ch : row) have[(unsigned char)ch]++;
+        for (char ch : word) if (++need[(unsigned char)ch] > have[(unsigned char)ch]) return false;
+
+        for (int r = 0; r < m; ++r)
+            for (int c = 0; c < n; ++c)
+                if (dfs(board, word, r, c, 0)) return true;
+        return false;
+    }
+};
+
+=== examples
+[["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]]
+"ABCCED"
+> true
+
+[["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]]
+"SEE"
+> true
+
+[["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]]
+"ABCB"
+> false
+: The path would need to reuse the 'B' cell.
+
+=== tests
+[["a"]]
+"a"
+> true
+
+[["a"]]
+"b"
+> false
+
+[["a","a"]]
+"aaa"
+> false
+
+[["C","A","A"],["A","A","A"],["B","C","D"]]
+"AAB"
+> true

@@ -1,0 +1,508 @@
+@@ category: Divide & Conquer
+
+@@@ problem 108 convert-sorted-array-to-binary-search-tree
+title: Convert Sorted Array to Binary Search Tree
+difficulty: Easy
+topics: Array, Divide and Conquer, Tree, Binary Search Tree, Binary Tree
+params: nums
+time: O(n)
+space: O(n) for the tree, O(log n) recursion
+bench: n=64..1048576 time=n space=n unit=nums.length
+
+=== description
+Given an integer array `nums` sorted in ascending order, convert it into a **height-balanced** binary search tree: a BST in which the depths of the two subtrees of every node differ by at most one.
+
+Many trees are valid answers. The judge checks your tree and prints `"a height-balanced BST"` when it is one with exactly the values of `nums`; otherwise it prints the tree you returned.
+
+=== constraints
+- `1 <= nums.length <= 10^4`
+- `-10^4 <= nums[i] <= 10^4`
+- `nums` is strictly increasing
+
+=== hints
+- Which element should be the root so that both sides get (almost) the same number of nodes?
+- Recurse on the left half and the right half.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto nums = c.arg<std::vector<int>>();
+        auto copy = nums;
+        TreeNode *r = nullptr;
+        Solution s;
+        c.time([&] { r = s.sortedArrayToBST(nums); });
+        std::vector<int> in;
+        bool ok = true;
+        std::function<int(TreeNode *)> check = [&](TreeNode *t) -> int {   // returns height, validates balance
+            if (!t || !ok) return 0;
+            if (in.size() > copy.size()) { ok = false; return 0; }
+            int hl = check(t->left);
+            in.push_back(t->val);
+            int hr = check(t->right);
+            if (std::abs(hl - hr) > 1) ok = false;
+            return 1 + std::max(hl, hr);
+        };
+        check(r);
+        if (ok && in == copy) c.out_text("\"a height-balanced BST\"");
+        else c.out(r);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        auto v = g.distinct(std::max(n, 1), -std::max(10000, 3 * n), std::max(10000, 3 * n));
+        std::sort(v.begin(), v.end());
+        return lc::lines(v);
+    });
+}
+
+=== approach
+Take the **middle element** as the root: it splits the remaining elements into two halves whose sizes differ by at most one, and because the array is sorted, the left half holds smaller values and the right half larger ones. Build both subtrees recursively from those halves. The heights of the two subtrees then differ by at most one at every node.
+
+=== solution
+class Solution {
+    TreeNode* build(const vector<int> &nums, int lo, int hi) {
+        if (lo > hi) return nullptr;
+        int mid = lo + (hi - lo) / 2;              // middle element becomes the root
+        TreeNode *root = new TreeNode(nums[mid]);
+        root->left = build(nums, lo, mid - 1);     // smaller values
+        root->right = build(nums, mid + 1, hi);    // larger values
+        return root;
+    }
+
+public:
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        return build(nums, 0, (int)nums.size() - 1);
+    }
+};
+
+=== examples
+[-10,-3,0,5,9]
+> "a height-balanced BST"
+: For example [0,-3,9,-10,null,5] or [0,-10,5,null,-3,null,9].
+
+[1,3]
+> "a height-balanced BST"
+: Both [1,null,3] and [3,1] are accepted.
+
+=== tests
+[7]
+> "a height-balanced BST"
+
+[1,2,3,4,5,6,7]
+> "a height-balanced BST"
+
+[-5,-4,-3,-2,-1,0,1,2]
+> "a height-balanced BST"
+
+@@@ problem 148 sort-list
+title: Sort List
+difficulty: Medium
+topics: Linked List, Two Pointers, Divide and Conquer, Sorting, Merge Sort
+params: head
+time: O(n log n)
+space: O(1)
+bench: n=64..524288 time=nlogn space=1 unit=number_of_nodes
+
+=== description
+Given the `head` of a linked list, return the list sorted in ascending order.
+
+Follow-up: can you sort it in O(n log n) time with O(1) extra memory?
+
+=== constraints
+- `0 <= number of nodes <= 5 * 10^4`
+- `-10^5 <= Node.val <= 10^5`
+
+=== hints
+- Merge sort suits linked lists: merging needs no extra array.
+- For O(1) memory, merge **bottom-up**: first sublists of size 1, then 2, 4, ... instead of recursing.
+
+=== template
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* sortList(ListNode* head) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::sortList);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.ints(n, -100000, 100000)); });
+}
+
+=== approach
+**Bottom-up merge sort.** Count the length `n`. For `width = 1, 2, 4, ...` while `width < n`: walk the list, cutting off two runs of `width` nodes each, merge them, and append the merged run to the growing result. After the pass, runs of size `2·width` are sorted. After `log n` passes the whole list is sorted.
+
+Merging relinks nodes, and the passes use only a few pointers, so extra memory is O(1) (a recursive top-down merge sort would use O(log n) stack).
+
+=== solution
+class Solution {
+    // Detach the first `k` nodes starting at `head`; return the node after them.
+    ListNode* cut(ListNode *head, int k) {
+        while (--k > 0 && head) head = head->next;
+        if (!head) return nullptr;
+        ListNode *rest = head->next;
+        head->next = nullptr;
+        return rest;
+    }
+
+    // Merge two sorted lists; append them after `tail`; return the new tail.
+    ListNode* merge(ListNode *a, ListNode *b, ListNode *tail) {
+        while (a && b) {
+            if (a->val <= b->val) { tail->next = a; a = a->next; }
+            else                  { tail->next = b; b = b->next; }
+            tail = tail->next;
+        }
+        tail->next = a ? a : b;
+        while (tail->next) tail = tail->next;
+        return tail;
+    }
+
+public:
+    ListNode* sortList(ListNode* head) {
+        int n = 0;
+        for (ListNode *p = head; p; p = p->next) ++n;
+        ListNode dummy(0, head);
+        for (int width = 1; width < n; width *= 2) {       // log n passes
+            ListNode *cur = dummy.next, *tail = &dummy;
+            while (cur) {
+                ListNode *left = cur;
+                ListNode *right = cut(left, width);         // first run
+                cur = cut(right, width);                    // second run; cur = remainder
+                tail = merge(left, right, tail);            // append merged run
+            }
+        }
+        return dummy.next;
+    }
+};
+
+=== examples
+[4,2,1,3]
+> [1,2,3,4]
+
+[-1,5,3,4,0]
+> [-1,0,3,4,5]
+
+[]
+> []
+
+=== tests
+[1]
+> [1]
+
+[2,1]
+> [1,2]
+
+[3,3,1,3,1]
+> [1,1,3,3,3]
+
+[5,4,3,2,1,0,-1]
+> [-1,0,1,2,3,4,5]
+
+@@@ problem 427 construct-quad-tree
+title: Construct Quad Tree
+difficulty: Medium
+topics: Array, Divide and Conquer, Tree, Matrix
+params: grid
+time: O(n²)
+space: O(n²)
+bench: n=64..1048576 time=n space=n unit=number_of_cells
+
+=== description
+Given an `n x n` grid of `0`s and `1`s (`n` is a power of two), build its **quad tree**. Each node has `val` and `isLeaf` and four children `topLeft`, `topRight`, `bottomLeft`, `bottomRight`:
+
+- if the current square has all equal values, it becomes a **leaf** with `isLeaf = true` and `val` = that value, and no children;
+- otherwise it's an internal node (`isLeaf = false`, `val` arbitrary) whose four children are the quad trees of its four quadrants.
+
+The output is the tree in level order, each node as `[isLeaf, val]` (1/0), and `null` for missing children. The judge prints internal nodes as `[0,1]` whatever their `val`.
+
+=== constraints
+- `n == grid.length == grid[i].length`
+- `n == 2^x` with `0 <= x <= 6`
+
+=== hints
+- Build the four quadrants first (recursively). If all four are leaves with the same value, merge them into one leaf.
+- That bottom-up approach touches each cell once.
+
+=== template
+// Definition for a QuadTree node (keep this in your file).
+class Node {
+public:
+    bool val;
+    bool isLeaf;
+    Node* topLeft;
+    Node* topRight;
+    Node* bottomLeft;
+    Node* bottomRight;
+
+    Node() {
+        val = false;
+        isLeaf = false;
+        topLeft = topRight = bottomLeft = bottomRight = NULL;
+    }
+    Node(bool _val, bool _isLeaf) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = topRight = bottomLeft = bottomRight = NULL;
+    }
+    Node(bool _val, bool _isLeaf, Node* _topLeft, Node* _topRight, Node* _bottomLeft, Node* _bottomRight) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = _topLeft;
+        topRight = _topRight;
+        bottomLeft = _bottomLeft;
+        bottomRight = _bottomRight;
+    }
+};
+
+class Solution {
+public:
+    Node* construct(vector<vector<int>>& grid) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto grid = c.arg<std::vector<std::vector<int>>>();
+        Node *r = nullptr;
+        Solution s;
+        c.time([&] { r = s.construct(grid); });
+        std::vector<std::string> parts;
+        std::vector<Node *> q;
+        if (r) q.push_back(r);
+        for (size_t i = 0; i < q.size() && i < 50000000; ++i) {
+            Node *x = q[i];
+            if (!x) { parts.push_back("null"); continue; }
+            parts.push_back(x->isLeaf ? (x->val ? "[1,1]" : "[1,0]") : "[0,1]");
+            if (x->isLeaf) continue;
+            for (Node *ch : {x->topLeft, x->topRight, x->bottomLeft, x->bottomRight}) q.push_back(ch);
+        }
+        while (!parts.empty() && parts.back() == "null") parts.pop_back();
+        std::string o = "[";
+        for (size_t i = 0; i < parts.size(); ++i) o += (i ? "," : "") + parts[i];
+        c.out_text(o + "]");
+    });
+    h.gen([](lc::Gen &g, int cells) {
+        int n = 1;
+        while ((long long)n * n * 4 <= std::max(cells, 1)) n *= 2;
+        if (cells <= 40) n = 1 << g.irange(0, 3);
+        std::vector<std::vector<int>> grid(n, std::vector<int>(n));
+        // blocky random image so that merges actually happen
+        std::function<void(int, int, int)> paint = [&](int r, int c, int sz) {
+            if (sz == 1 || g.coin(0.3)) {
+                int v = g.irange(0, 1);
+                for (int i = r; i < r + sz; ++i) for (int j = c; j < c + sz; ++j) grid[i][j] = v;
+                return;
+            }
+            int h2 = sz / 2;
+            paint(r, c, h2); paint(r, c + h2, h2); paint(r + h2, c, h2); paint(r + h2, c + h2, h2);
+        };
+        paint(0, 0, n);
+        return lc::lines(grid);
+    });
+}
+
+=== approach
+**Divide and conquer, bottom-up.** `build(r, c, size)` returns the quad tree for the square with top-left corner `(r, c)`:
+
+- a single cell becomes a leaf;
+- otherwise build the four quadrants of half the size. If all four are leaves with the same value, the square is uniform: return one leaf with that value (discarding the children). Otherwise return an internal node with the four children.
+
+Each cell is visited once at the bottom level and every merge step is O(1), so the total work is O(n²).
+
+=== solution
+// Definition for a QuadTree node.
+class Node {
+public:
+    bool val;
+    bool isLeaf;
+    Node* topLeft;
+    Node* topRight;
+    Node* bottomLeft;
+    Node* bottomRight;
+
+    Node() {
+        val = false;
+        isLeaf = false;
+        topLeft = topRight = bottomLeft = bottomRight = NULL;
+    }
+    Node(bool _val, bool _isLeaf) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = topRight = bottomLeft = bottomRight = NULL;
+    }
+    Node(bool _val, bool _isLeaf, Node* _topLeft, Node* _topRight, Node* _bottomLeft, Node* _bottomRight) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = _topLeft;
+        topRight = _topRight;
+        bottomLeft = _bottomLeft;
+        bottomRight = _bottomRight;
+    }
+};
+
+class Solution {
+    Node* build(const vector<vector<int>> &g, int r, int c, int size) {
+        if (size == 1) return new Node(g[r][c] == 1, true);
+        int h = size / 2;
+        Node *tl = build(g, r, c, h), *tr = build(g, r, c + h, h);
+        Node *bl = build(g, r + h, c, h), *br = build(g, r + h, c + h, h);
+        bool uniform = tl->isLeaf && tr->isLeaf && bl->isLeaf && br->isLeaf &&
+                       tl->val == tr->val && tr->val == bl->val && bl->val == br->val;
+        if (uniform) {                                     // merge four equal leaves
+            bool v = tl->val;
+            delete tl; delete tr; delete bl; delete br;
+            return new Node(v, true);
+        }
+        return new Node(true, false, tl, tr, bl, br);
+    }
+
+public:
+    Node* construct(vector<vector<int>>& grid) {
+        return build(grid, 0, 0, grid.size());
+    }
+};
+
+=== examples
+[[0,1],[1,0]]
+> [[0,1],[1,0],[1,1],[1,1],[1,0]]
+: The four quadrants differ, so the root has four leaf children.
+
+[[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0]]
+> [[0,1],[1,1],[0,1],[1,1],[1,0],null,null,null,null,[1,0],[1,0],[1,1],[1,1]]
+
+=== tests
+[[1]]
+> [[1,1]]
+
+[[0,0],[0,0]]
+> [[1,0]]
+
+[[1,1,0,0],[1,1,0,0],[0,0,1,1],[0,0,1,0]]
+> [[0,1],[1,1],[1,0],[1,0],[0,1],[1,1],[1,1],[1,1],[1,0]]
+
+@@@ problem 23 merge-k-sorted-lists
+title: Merge k Sorted Lists
+difficulty: Hard
+topics: Linked List, Divide and Conquer, Heap (Priority Queue), Merge Sort
+params: lists
+time: O(N log k)
+space: O(k)
+bench: n=64..524288 time=nlogn space=n unit=total_nodes_N_(k_=_N/16_lists)
+
+=== description
+You are given an array of `k` linked lists, each sorted in ascending order. Merge them all into one sorted linked list and return it.
+
+=== constraints
+- `0 <= k <= 10^4`, each list has `0..500` nodes
+- `-10^4 <= values <= 10^4`
+- the total number of nodes `N` is at most `10^4`
+
+=== hints
+- A min-heap holding the current head of every list always tells you the next smallest node.
+- Alternatively, merge the lists in pairs, like the merge step of merge sort: `log k` rounds.
+
+=== template
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::mergeKLists);
+    h.gen([](lc::Gen &g, int n) {
+        int k = n <= 40 ? g.irange(0, 5) : std::max(1, n / 16);
+        std::vector<std::vector<int>> lists(k);
+        for (int i = 0; i < n && k > 0; ++i) lists[g.irange(0, k - 1)].push_back(g.irange(-10000, 10000));
+        for (auto &l : lists) std::sort(l.begin(), l.end());
+        return lc::lines(lists);
+    });
+}
+
+=== approach
+Keep a **min-heap** of the current front node of every non-empty list. Repeatedly pop the smallest node, append it to the result, and push its successor (if any). The heap never holds more than `k` nodes, so each of the `N` nodes costs O(log k): O(N log k) total with O(k) extra memory.
+
+=== solution
+class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        auto greater = [](ListNode *a, ListNode *b) { return a->val > b->val; };
+        priority_queue<ListNode*, vector<ListNode*>, decltype(greater)> heap(greater);   // min-heap
+        for (ListNode *l : lists)
+            if (l) heap.push(l);
+        ListNode dummy;
+        ListNode *tail = &dummy;
+        while (!heap.empty()) {
+            ListNode *node = heap.top(); heap.pop();   // smallest front node
+            tail->next = node;
+            tail = node;
+            if (node->next) heap.push(node->next);     // its successor joins the heap
+        }
+        return dummy.next;
+    }
+};
+
+=== examples
+[[1,4,5],[1,3,4],[2,6]]
+> [1,1,2,3,4,4,5,6]
+
+[]
+> []
+
+[[]]
+> []
+
+=== tests
+[[1]]
+> [1]
+
+[[],[1],[]]
+> [1]
+
+[[5,6],[1,2],[3,4]]
+> [1,2,3,4,5,6]
+
+[[-2,-1,-1,-1],[]]
+> [-2,-1,-1,-1]

@@ -1,0 +1,411 @@
+@@ category: Trie
+
+@@@ problem 208 implement-trie-prefix-tree
+title: Implement Trie (Prefix Tree)
+difficulty: Medium
+topics: Hash Table, String, Design, Trie
+params: operations, arguments
+time: O(L) per operation
+space: O(total characters inserted)
+bench: n=64..262144 time=n space=n unit=number_of_operations_(words_of_length_≤_8)
+
+=== description
+A **trie** (prefix tree) stores strings so that lookups by prefix are fast. Implement the `Trie` class:
+
+- `Trie()` creates an empty trie.
+- `void insert(string word)` inserts `word`.
+- `bool search(string word)` returns `true` if `word` was inserted before.
+- `bool startsWith(string prefix)` returns `true` if some inserted word starts with `prefix`.
+
+=== constraints
+- `1 <= word.length, prefix.length <= 2000`
+- words and prefixes consist of lowercase English letters
+- at most `3 * 10^4` calls in total
+
+=== hints
+- Each node has up to 26 children and a flag "a word ends here".
+- `search` and `startsWith` walk the same path; they differ only in whether the end flag must be set.
+
+=== template
+class Trie {
+public:
+    Trie() {
+
+    }
+
+    void insert(string word) {
+
+    }
+
+    bool search(string word) {
+
+    }
+
+    bool startsWith(string prefix) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.design<Trie>()
+        .method("insert", &Trie::insert)
+        .method("search", &Trie::search)
+        .method("startsWith", &Trie::startsWith);
+    h.gen([](lc::Gen &g, int n) {
+        lc::Ops ops;
+        ops.add("Trie");
+        int k = n <= 40 ? 3 : 26;
+        std::vector<std::string> words;
+        for (int i = 0; i < n; ++i) {
+            int r = g.irange(0, 2);
+            std::string w = !words.empty() && g.coin(0.5) ? g.pick(words) : g.lower(g.irange(1, 8), k);
+            if (r == 0) { ops.add("insert", w); words.push_back(w); }
+            else if (r == 1) ops.add("search", w);
+            else ops.add("startsWith", w.substr(0, g.irange(1, (int)w.size())));
+        }
+        return ops.lines();
+    });
+}
+
+=== approach
+Each trie node has an array of 26 child pointers and a boolean `end` marking that a word finishes there.
+
+- `insert`: walk from the root, creating missing children letter by letter, and set `end` on the last node.
+- `find(s)`: walk the path of `s`; return the final node or `nullptr` if the path breaks.
+- `search(w)` = the node exists **and** `end` is set; `startsWith(p)` = the node exists.
+
+Each operation costs O(L) for a string of length L.
+
+=== solution
+class Trie {
+    struct Node {
+        Node *child[26] = {};
+        bool end = false;          // a word ends at this node
+    };
+    Node root;
+
+    // Node reached by following s from the root, or nullptr.
+    const Node *find(const string &s) const {
+        const Node *cur = &root;
+        for (char c : s) {
+            cur = cur->child[c - 'a'];
+            if (!cur) return nullptr;
+        }
+        return cur;
+    }
+
+public:
+    Trie() {}
+
+    void insert(string word) {
+        Node *cur = &root;
+        for (char c : word) {
+            Node *&next = cur->child[c - 'a'];
+            if (!next) next = new Node();   // extend the path
+            cur = next;
+        }
+        cur->end = true;
+    }
+
+    bool search(string word) {
+        const Node *n = find(word);
+        return n && n->end;                 // full word must end here
+    }
+
+    bool startsWith(string prefix) { return find(prefix) != nullptr; }
+};
+
+=== examples
+["Trie","insert","search","search","startsWith","insert","search"]
+[[],["apple"],["apple"],["app"],["app"],["app"],["app"]]
+> [null,null,true,false,true,null,true]
+
+=== tests
+["Trie","search","startsWith"]
+[[],["a"],["a"]]
+> [null,false,false]
+
+["Trie","insert","insert","search","search","startsWith","startsWith"]
+[[],["ab"],["abc"],["a"],["abc"],["abcd"],["b"]]
+> [null,null,null,false,true,false,false]
+
+["Trie","insert","insert","search","startsWith"]
+[[],["x"],["x"],["x"],["x"]]
+> [null,null,null,true,true]
+
+@@@ problem 211 design-add-and-search-words-data-structure
+title: Design Add and Search Words Data Structure
+difficulty: Medium
+topics: String, Depth-First Search, Design, Trie
+params: operations, arguments
+time: O(L) to add, O(26^d · L) to search with d dots
+space: O(total characters added)
+bench: n=64..262144 time=n space=n unit=number_of_operations
+
+=== description
+Design a data structure that supports adding words and searching with **wildcards**:
+
+- `WordDictionary()` creates an empty dictionary.
+- `void addWord(string word)` adds `word`.
+- `bool search(string word)` returns `true` if any added word matches `word`, where the character `'.'` matches **any single letter**.
+
+=== constraints
+- `1 <= word.length <= 25`
+- `word` in `addWord` is lowercase letters; in `search` lowercase letters or `'.'`
+- a search contains at most 2 dots
+- at most `10^4` calls in total
+
+=== hints
+- Store the words in a trie.
+- A normal letter follows one child; a `'.'` must try every existing child (DFS).
+
+=== template
+class WordDictionary {
+public:
+    WordDictionary() {
+
+    }
+
+    void addWord(string word) {
+
+    }
+
+    bool search(string word) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.design<WordDictionary>()
+        .method("addWord", &WordDictionary::addWord)
+        .method("search", &WordDictionary::search);
+    h.gen([](lc::Gen &g, int n) {
+        lc::Ops ops;
+        ops.add("WordDictionary");
+        int k = n <= 40 ? 3 : 6;
+        std::vector<std::string> words;
+        for (int i = 0; i < n; ++i) {
+            if (g.coin(0.5)) {
+                std::string w = g.lower(g.irange(1, 6), k);
+                ops.add("addWord", w);
+                words.push_back(w);
+            } else {
+                std::string w = !words.empty() && g.coin(0.6) ? g.pick(words) : g.lower(g.irange(1, 6), k);
+                int dots = g.irange(0, 2);
+                for (int d = 0; d < dots; ++d) w[g.irange(0, (int)w.size() - 1)] = '.';
+                ops.add("search", w);
+            }
+        }
+        return ops.lines();
+    });
+}
+
+=== approach
+Store words in a **trie**. `search` is a DFS over the pattern: at position `i`, a letter moves to that single child (if it exists); a `'.'` tries **every** non-null child and succeeds if any branch succeeds. At the end of the pattern, the current node must mark the end of a word.
+
+With at most 2 dots the branching is bounded by 26², so searches stay fast.
+
+=== solution
+class WordDictionary {
+    struct Node {
+        Node *child[26] = {};
+        bool end = false;
+    };
+    Node root;
+
+    bool dfs(const Node *node, const string &w, size_t i) const {
+        if (i == w.size()) return node->end;          // pattern consumed
+        if (w[i] == '.') {                            // wildcard: try every child
+            for (const Node *c : node->child)
+                if (c && dfs(c, w, i + 1)) return true;
+            return false;
+        }
+        const Node *c = node->child[w[i] - 'a'];
+        return c && dfs(c, w, i + 1);
+    }
+
+public:
+    WordDictionary() {}
+
+    void addWord(string word) {
+        Node *cur = &root;
+        for (char ch : word) {
+            Node *&next = cur->child[ch - 'a'];
+            if (!next) next = new Node();
+            cur = next;
+        }
+        cur->end = true;
+    }
+
+    bool search(string word) { return dfs(&root, word, 0); }
+};
+
+=== examples
+["WordDictionary","addWord","addWord","addWord","search","search","search","search"]
+[[],["bad"],["dad"],["mad"],["pad"],["bad"],[".ad"],["b.."]]
+> [null,null,null,null,false,true,true,true]
+
+=== tests
+["WordDictionary","search","addWord","search","search"]
+[[],["."],["a"],["."],[".."]]
+> [null,false,null,true,false]
+
+["WordDictionary","addWord","addWord","search","search","search"]
+[[],["at"],["and"],["a."],["an."],["..d"]]
+> [null,null,null,true,true,true]
+
+["WordDictionary","addWord","search","search"]
+[[],["ab"],["ab."],["a"]]
+> [null,null,false,false]
+
+@@@ problem 212 word-search-ii
+title: Word Search II
+difficulty: Hard
+topics: Array, String, Backtracking, Trie, Matrix
+params: board, words
+time: O(m · n · 4 · 3^(L-1))
+space: O(total characters in words)
+bench: off
+
+=== description
+Given an `m x n` `board` of letters and a list of `words`, return every word that can be formed on the board. The order of the result does not matter (the judge sorts it).
+
+A word is built from letters of **adjacent cells** (horizontal or vertical neighbours). The same cell may not be used twice within one word.
+
+=== constraints
+- `1 <= m, n <= 12`
+- `1 <= words.length <= 3 * 10^4`, `1 <= words[i].length <= 10`
+- board and words use lowercase English letters; all words are unique
+
+=== hints
+- Searching each word separately repeats work. Put all words in a trie.
+- DFS from every cell while walking down the trie at the same time; stop as soon as the prefix is not in the trie.
+- Remove a word from the trie once found so it isn't reported twice (and prune empty branches).
+
+=== template
+class Solution {
+public:
+    vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::findWords).sort_output();
+    h.gen([](lc::Gen &g, int n) {
+        int r = g.irange(1, 5), c = g.irange(1, 5);
+        std::string alpha = "abcde";
+        std::vector<std::vector<char>> b(r, std::vector<char>(c));
+        for (auto &row : b) for (auto &x : row) x = alpha[g.irange(0, 4)];
+        std::set<std::string> words;
+        int count = std::max(1, n);
+        for (int i = 0; i < count; ++i) {
+            if (g.coin(0.5)) {      // a path that exists on the board
+                int y = g.irange(0, r - 1), x = g.irange(0, c - 1), len = g.irange(1, 6);
+                std::string w;
+                std::set<std::pair<int, int>> used;
+                for (int k = 0; k < len; ++k) {
+                    w += b[y][x];
+                    used.insert({y, x});
+                    std::vector<std::pair<int, int>> nb;
+                    for (auto [dy, dx] : std::vector<std::pair<int, int>>{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                        int ny = y + dy, nx = x + dx;
+                        if (ny >= 0 && ny < r && nx >= 0 && nx < c && !used.count({ny, nx})) nb.push_back({ny, nx});
+                    }
+                    if (nb.empty()) break;
+                    std::tie(y, x) = g.pick(nb);
+                }
+                words.insert(w);
+            } else {
+                words.insert(g.str(g.irange(1, 5), alpha));
+            }
+        }
+        return lc::lines(b, std::vector<std::string>(words.begin(), words.end()));
+    });
+}
+
+=== approach
+Build a **trie** of all words, storing the complete word at its end node. Then run a **DFS from every cell**, descending the trie in lockstep with the path on the board:
+
+- if the cell's letter has no child in the current trie node, stop immediately (no word has this prefix);
+- if the child node holds a word, record it and clear it (so it is reported once);
+- mark the cell as visited (e.g. set it to `'#'`), explore the four neighbours, then restore it.
+
+A single DFS thus searches for all words at once, and the trie prunes hopeless paths early.
+
+=== solution
+class Solution {
+    struct Node {
+        Node *child[26] = {};
+        string word;                 // non-empty if a word ends here
+    };
+    vector<string> found;
+    int m = 0, n = 0;
+
+    void dfs(vector<vector<char>> &board, int r, int c, Node *parent) {
+        char ch = board[r][c];
+        if (ch == '#') return;                       // already on the current path
+        Node *node = parent->child[ch - 'a'];
+        if (!node) return;                           // no word continues this way
+        if (!node->word.empty()) {
+            found.push_back(node->word);
+            node->word.clear();                      // report each word once
+        }
+        board[r][c] = '#';                           // mark visited
+        if (r > 0) dfs(board, r - 1, c, node);
+        if (r + 1 < m) dfs(board, r + 1, c, node);
+        if (c > 0) dfs(board, r, c - 1, node);
+        if (c + 1 < n) dfs(board, r, c + 1, node);
+        board[r][c] = ch;                            // restore
+    }
+
+public:
+    vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+        Node root;
+        for (auto &w : words) {                      // build the trie
+            Node *cur = &root;
+            for (char ch : w) {
+                Node *&next = cur->child[ch - 'a'];
+                if (!next) next = new Node();
+                cur = next;
+            }
+            cur->word = w;
+        }
+        found.clear();
+        m = board.size();
+        n = board[0].size();
+        for (int r = 0; r < m; ++r)
+            for (int c = 0; c < n; ++c) dfs(board, r, c, &root);
+        return found;
+    }
+};
+
+=== examples
+[["o","a","a","n"],["e","t","a","e"],["i","h","k","r"],["i","f","l","v"]]
+["oath","pea","eat","rain"]
+> ["eat","oath"]
+
+[["a","b"],["c","d"]]
+["abcb"]
+> []
+: A cell cannot be reused, so "abcb" is impossible.
+
+=== tests
+[["a"]]
+["a","b"]
+> ["a"]
+
+[["a","a"]]
+["aaa"]
+> []
+
+[["a","b"],["c","d"]]
+["ab","cb","ad","bd","ac","ca","da","bc","db","adcb","dabc","abb","acb"]
+> ["ab","ac","bd","ca","db"]
+
+[["o","a","b","n"],["o","t","a","e"],["a","h","k","r"],["a","f","l","v"]]
+["oa","oaa"]
+> ["oa","oaa"]

@@ -1,0 +1,167 @@
+@@ category: Kadane's Algorithm
+
+@@@ problem 53 maximum-subarray
+title: Maximum Subarray
+difficulty: Medium
+topics: Array, Divide and Conquer, Dynamic Programming
+params: nums
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1
+
+=== description
+Given an integer array `nums`, find the non-empty contiguous **subarray** with the largest sum, and return that sum.
+
+Follow-up: after the O(n) solution, try a divide-and-conquer one.
+
+=== constraints
+- `1 <= nums.length <= 10^5`
+- `-10^4 <= nums[i] <= 10^4`
+
+=== hints
+- Let `best_here` be the largest sum of a subarray **ending** at index `i`. How does it relate to `best_here` at `i - 1`?
+- If the running sum becomes negative, it only hurts what follows: start fresh.
+
+=== template
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::maxSubArray);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.ints(std::max(n, 1), -10000, 10000)); });
+}
+
+=== approach
+**Kadane's algorithm.** Scan once, keeping `cur`: the best sum of a subarray that ends at the current element. Either the best subarray ending here extends the previous one, or it starts fresh here: `cur = max(x, cur + x)`. The answer is the maximum `cur` over all positions.
+
+Starting the answer with the first element (not 0) handles all-negative arrays.
+
+=== solution
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int cur = nums[0], best = nums[0];
+        for (size_t i = 1; i < nums.size(); ++i) {
+            cur = max(nums[i], cur + nums[i]);   // extend, or start a new subarray here
+            best = max(best, cur);
+        }
+        return best;
+    }
+};
+
+=== examples
+[-2,1,-3,4,-1,2,1,-5,4]
+> 6
+: The subarray [4,-1,2,1] has the largest sum.
+
+[1]
+> 1
+
+[5,4,-1,7,8]
+> 23
+
+=== tests
+[-1]
+> -1
+
+[-3,-2,-5]
+> -2
+
+[1,-1,1,-1,1]
+> 1
+
+[8,-19,5,-4,20]
+> 21
+
+@@@ problem 918 maximum-sum-circular-subarray
+title: Maximum Sum Circular Subarray
+difficulty: Medium
+topics: Array, Divide and Conquer, Dynamic Programming, Queue, Monotonic Queue
+params: nums
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1
+
+=== description
+Given a **circular** integer array `nums` (the element after the last one is the first one), return the maximum possible sum of a non-empty subarray. A subarray may wrap around, but may include each element at most once.
+
+=== constraints
+- `1 <= n <= 3 * 10^4`
+- `-3 * 10^4 <= nums[i] <= 3 * 10^4`
+
+=== hints
+- A wrapping subarray is "everything except a middle subarray". Maximizing it means minimizing that middle part.
+- Answer = `max(maxSubarray, total - minSubarray)`, except when all numbers are negative.
+
+=== template
+class Solution {
+public:
+    int maxSubarraySumCircular(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::maxSubarraySumCircular);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        return lc::lines(g.coin(0.15) ? g.ints(n, -30000, -1) : g.ints(n, -30000, 30000));
+    });
+}
+
+=== approach
+The best subarray is either:
+
+1. **non-wrapping**: ordinary Kadane maximum, or
+2. **wrapping**: it takes a prefix and a suffix, i.e. the whole array **minus** a contiguous middle part. To maximize it, subtract the **minimum** subarray sum (Kadane with `min`).
+
+Compute the total, the max subarray and the min subarray in one pass. One catch: if every number is negative, "total − min" would describe an empty subarray; then the answer is just the max subarray.
+
+=== solution
+class Solution {
+public:
+    int maxSubarraySumCircular(vector<int>& nums) {
+        int total = 0;
+        int curMax = 0, bestMax = nums[0];      // Kadane for the maximum
+        int curMin = 0, bestMin = nums[0];      // Kadane for the minimum
+        for (int x : nums) {
+            total += x;
+            curMax = max(x, curMax + x);
+            bestMax = max(bestMax, curMax);
+            curMin = min(x, curMin + x);
+            bestMin = min(bestMin, curMin);
+        }
+        if (bestMax < 0) return bestMax;        // all negative: wrap would be empty
+        return max(bestMax, total - bestMin);   // straight vs. wrapping subarray
+    }
+};
+
+=== examples
+[1,-2,3,-2]
+> 3
+
+[5,-3,5]
+> 10
+: The wrapping subarray [5,5] sums to 10.
+
+[-3,-2,-3]
+> -2
+
+=== tests
+[7]
+> 7
+
+[3,-1,2,-1]
+> 4
+
+[3,-2,2,-3]
+> 3
+
+[-2,4,-5,4,-5,9,4]
+> 15

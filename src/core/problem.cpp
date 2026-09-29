@@ -31,7 +31,7 @@ std::string complexity_label(const std::string &c) {
     static const std::map<std::string, std::string> names = {
         {"1", "O(1)"},       {"logn", "O(log n)"}, {"log2n", "O(log² n)"}, {"sqrtn", "O(√n)"},  {"n", "O(n)"},
         {"nlogn", "O(n log n)"}, {"n^2", "O(n²)"}, {"n^2logn", "O(n² log n)"}, {"n^3", "O(n³)"},
-        {"2^n", "O(2ⁿ)"},    {"n!", "O(n!)"},       {"-", "—"}};
+        {"2^n", "O(2ⁿ)"}, {"3^n", "O(3ⁿ)"}, {"4^n", "O(4ⁿ)"},    {"n!", "O(n!)"},       {"-", "—"}};
     auto it = names.find(c);
     return it == names.end() ? c : it->second;
 }

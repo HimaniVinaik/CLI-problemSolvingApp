@@ -20,6 +20,8 @@ double growth(const std::string &c, double n) {
     if (c == "n^2logn") return n * n * lg;
     if (c == "n^3") return n * n * n;
     if (c == "2^n") return std::pow(2.0, n);
+    if (c == "3^n") return std::pow(3.0, n);
+    if (c == "4^n") return std::pow(4.0, n);
     if (c == "n!") return std::tgamma(n + 1);
     return n;
 }
@@ -83,7 +85,7 @@ Model fit_absolute(const std::vector<std::pair<double, double>> &xy, const std::
 }
 
 std::vector<std::string> candidates(bool small, double max_n) {
-    if (small) return {"1", "n", "n^2", "n^3", "2^n", "n!"};
+    if (small) return {"1", "n", "n^2", "n^3", "2^n", "3^n", "4^n", "n!"};
     std::vector<std::string> c = {"1", "logn", "log2n", "n", "nlogn", "n^2", "n^3"};
     if (max_n <= 64) c.push_back("2^n");
     return c;
@@ -94,7 +96,7 @@ std::vector<std::string> candidates(bool small, double max_n) {
 int class_rank(const std::string &c) {
     static const std::map<std::string, int> r = {{"1", 0},    {"logn", 10},  {"log2n", 12},  {"sqrtn", 15},   {"n", 20},
                                                  {"nlogn", 30}, {"n^2", 40}, {"n^2logn", 45}, {"n^3", 50},
-                                                 {"2^n", 60}, {"n!", 70}};
+                                                 {"2^n", 60}, {"3^n", 62}, {"4^n", 64}, {"n!", 70}};
     auto it = r.find(c);
     return it == r.end() ? -1 : it->second;
 }
@@ -157,7 +159,7 @@ Fit fit_work(const std::vector<BenchPoint> &pts, bool small) {
 }
 
 Fit choose_time_class(const Fit &work, const Fit &wall, std::string &basis) {
-    static const std::vector<std::string> order = {"1", "logn", "log2n", "n", "nlogn", "n^2", "n^3", "2^n", "n!"};
+    static const std::vector<std::string> order = {"1", "logn", "log2n", "n", "nlogn", "n^2", "n^3", "2^n", "3^n", "4^n", "n!"};
     auto idx = [&](const std::string &c) {
         auto it = std::find(order.begin(), order.end(), c);
         return it == order.end() ? -1 : (int)(it - order.begin());
