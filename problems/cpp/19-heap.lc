@@ -1,0 +1,432 @@
+@@ category: Heap
+
+@@@ problem 215 kth-largest-element-in-an-array
+title: Kth Largest Element in an Array
+difficulty: Medium
+topics: Array, Divide and Conquer, Sorting, Heap (Priority Queue), Quickselect
+params: nums, k
+time: O(n) average
+space: O(1)
+bench: n=64..1048576 time=n space=- unit=nums.length_(k_=_n/2)
+
+=== description
+Given an integer array `nums` and an integer `k`, return the `k`-th largest element in **sorted order** (not the `k`-th distinct element).
+
+Can you solve it without sorting?
+
+=== constraints
+- `1 <= k <= nums.length <= 10^5`
+- `-10^4 <= nums[i] <= 10^4`
+
+=== hints
+- A min-heap of size `k` works in O(n log k).
+- Quickselect: partition around a pivot, then continue only on the side that contains position `n - k`. Random pivots give O(n) on average.
+
+=== template
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::findKthLargest);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        return lc::lines(g.ints(n, -10000, 10000), n > 40 ? n / 2 : g.irange(1, n));
+    });
+}
+
+=== approach
+**Quickselect.** The answer is the element that would sit at index `target = n - k` after sorting. Partition the current range around a **random pivot** into three parts: `< pivot`, `== pivot`, `> pivot` (a three-way partition keeps it fast when there are many duplicates). If `target` falls in the middle part, the pivot is the answer; otherwise continue only in the part that contains `target`.
+
+Each round discards a constant fraction on average, so the expected time is O(n + n/2 + n/4 + ...) = O(n), in place.
+
+=== solution
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        int target = nums.size() - k;              // index in ascending order
+        int lo = 0, hi = (int)nums.size() - 1;
+        mt19937 rng(12345);
+        while (true) {
+            int pivot = nums[lo + rng() % (hi - lo + 1)];
+            // Dutch national flag partition of [lo, hi]:
+            // [lo, lt) < pivot, [lt, i) == pivot, (gt, hi] > pivot
+            int lt = lo, i = lo, gt = hi;
+            while (i <= gt) {
+                if (nums[i] < pivot) swap(nums[i++], nums[lt++]);
+                else if (nums[i] > pivot) swap(nums[i], nums[gt--]);
+                else ++i;
+            }
+            if (target < lt) hi = lt - 1;          // answer among the smaller values
+            else if (target > gt) lo = gt + 1;     // answer among the larger values
+            else return pivot;                     // target lands on the pivot block
+        }
+    }
+};
+
+=== examples
+[3,2,1,5,6,4]
+2
+> 5
+
+[3,2,3,1,2,4,5,5,6]
+4
+> 4
+
+=== tests
+[1]
+1
+> 1
+
+[2,1]
+2
+> 1
+
+[7,7,7,7]
+3
+> 7
+
+[-1,-1,2,9,-5]
+1
+> 9
+
+@@@ problem 502 ipo
+title: IPO
+difficulty: Hard
+topics: Array, Greedy, Sorting, Heap (Priority Queue)
+params: k, w, profits, capital
+time: O(n log n)
+space: O(n)
+bench: n=64..524288 time=nlogn space=n unit=number_of_projects_(k_=_n/2)
+
+=== description
+You start with capital `w` and may complete **at most `k`** distinct projects. Project `i` needs at least `capital[i]` to start and, when finished, adds its pure profit `profits[i]` to your capital.
+
+Return the maximum capital you can end up with.
+
+=== constraints
+- `1 <= k <= 10^5`, `0 <= w <= 10^9`
+- `1 <= n <= 10^5`
+- `0 <= profits[i] <= 10^4`, `0 <= capital[i] <= 10^9`
+- the answer fits in a 32-bit integer
+
+=== hints
+- At each step, among the projects you can afford, taking the most profitable one is never worse.
+- Sort projects by required capital; as your capital grows, push newly affordable ones into a max-heap of profits.
+
+=== template
+class Solution {
+public:
+    int findMaximizedCapital(int k, int w, vector<int>& profits, vector<int>& capital) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::findMaximizedCapital);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        auto p = g.ints(n, 0, 10000);
+        auto c = g.ints(n, 0, n <= 40 ? 20 : 5000LL * n);
+        return lc::lines(n > 40 ? n / 2 : g.irange(1, n), g.irange(0, 10), p, c);
+    });
+}
+
+=== approach
+**Greedy with a max-heap.** Profits are never negative, so whenever you can do a project, doing the most profitable affordable one first only increases your capital and never hurts future choices.
+
+Sort projects by required capital. Repeat up to `k` times: move every project whose capital requirement is `<= w` into a **max-heap** of profits (a pointer walks the sorted list, so each project is added once); if the heap is empty you are stuck; otherwise pop the largest profit and add it to `w`.
+
+=== solution
+class Solution {
+public:
+    int findMaximizedCapital(int k, int w, vector<int>& profits, vector<int>& capital) {
+        int n = profits.size();
+        vector<pair<int, int>> projects(n);            // (capital needed, profit)
+        for (int i = 0; i < n; ++i) projects[i] = {capital[i], profits[i]};
+        sort(projects.begin(), projects.end());
+
+        priority_queue<int> affordable;                // profits of projects we can start
+        long long cap = w;
+        int next = 0;
+        while (k-- > 0) {
+            while (next < n && projects[next].first <= cap) affordable.push(projects[next++].second);
+            if (affordable.empty()) break;             // nothing we can afford
+            cap += affordable.top();                   // take the most profitable one
+            affordable.pop();
+        }
+        return (int)cap;
+    }
+};
+
+=== examples
+2
+0
+[1,2,3]
+[0,1,1]
+> 4
+: With capital 0 only project 0 is possible (profit 1). Then, with capital 1, take project 2 (profit 3): 4.
+
+3
+0
+[1,2,3]
+[0,1,2]
+> 6
+
+=== tests
+1
+0
+[1,2,3]
+[1,1,2]
+> 0
+
+10
+0
+[1,2,3]
+[0,1,2]
+> 6
+
+1
+2
+[1,2,3]
+[1,1,2]
+> 5
+
+@@@ problem 373 find-k-pairs-with-smallest-sums
+title: Find K Pairs with Smallest Sums
+difficulty: Medium
+topics: Array, Heap (Priority Queue)
+params: nums1, nums2, k
+time: O(k log k)
+space: O(k)
+bench: n=64..262144 time=nlogn space=n unit=k_=_array_length
+
+=== description
+You are given two ascending arrays `nums1` and `nums2` and an integer `k`. A pair `(u, v)` takes one element from each array.
+
+Return the `k` pairs with the **smallest sums**. When several pairs tie, any of them may be chosen, so the judge checks that your pairs are valid, distinct index pairs and prints the sorted list of their sums.
+
+=== constraints
+- `1 <= nums1.length, nums2.length <= 10^5`
+- `-10^9 <= nums1[i], nums2[i] <= 10^9`
+- both arrays are sorted ascending
+- `1 <= k <= 10^4`, `k <= nums1.length * nums2.length`
+
+=== hints
+- The smallest pair is `(0, 0)`. After taking `(i, j)`, the next candidates are `(i + 1, j)` and `(i, j + 1)`.
+- Seed a min-heap with `(i, 0)` for the first `k` values of `i`; after popping `(i, j)` push `(i, j + 1)`. Each pair is then generated exactly once.
+
+=== template
+class Solution {
+public:
+    vector<vector<int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto a = c.arg<std::vector<int>>(), b = c.arg<std::vector<int>>();
+        int k = c.arg<int>();
+        auto A = a, B = b;
+        std::vector<std::vector<int>> r;
+        Solution s;
+        c.time([&] { r = s.kSmallestPairs(a, b, k); });
+        // validate: every pair uses values from the arrays, no index pair is used twice
+        std::map<int, int> ca, cb;
+        for (int x : A) ca[x]++;
+        for (int x : B) cb[x]++;
+        std::map<std::pair<int, int>, long long> used;
+        std::vector<long long> sums;
+        for (auto &p : r) {
+            if (p.size() != 2 || !ca.count(p[0]) || !cb.count(p[1]) ||
+                ++used[{p[0], p[1]}] > (long long)ca[p[0]] * cb[p[1]]) {
+                c.out(r);
+                return;
+            }
+            sums.push_back((long long)p[0] + p[1]);
+        }
+        std::sort(sums.begin(), sums.end());
+        std::string o = "\"pair sums [";
+        for (size_t i = 0; i < sums.size(); ++i) o += (i ? "," : "") + std::to_string(sums[i]);
+        c.out_text(o + "]\"");
+    });
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        int la = n <= 40 ? g.irange(1, 8) : n, lb = n <= 40 ? g.irange(1, 8) : n;
+        int k = n <= 40 ? g.irange(1, la * lb) : n;
+        return lc::lines(g.sorted_ints(la, -20, 20), g.sorted_ints(lb, -20, 20), k);
+    });
+}
+
+=== approach
+Think of the sums as a matrix `M[i][j] = nums1[i] + nums2[j]`: each row and each column is sorted. That is like merging sorted rows with a **min-heap**:
+
+1. push `(i, 0)` for `i < min(k, m)`: the first element of each relevant row;
+2. `k` times: pop the smallest `(i, j)`, output it, and push its right neighbour `(i, j + 1)`.
+
+Each pair enters the heap at most once and the heap holds at most `k` entries: O(k log k).
+
+=== solution
+class Solution {
+public:
+    vector<vector<int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+        using T = tuple<long long, int, int>;                 // (sum, i, j)
+        priority_queue<T, vector<T>, greater<T>> heap;       // min-heap by sum
+        int m = nums1.size(), n = nums2.size();
+        for (int i = 0; i < min(k, m); ++i) heap.emplace((long long)nums1[i] + nums2[0], i, 0);
+        vector<vector<int>> out;
+        while (k-- > 0 && !heap.empty()) {
+            auto [sum, i, j] = heap.top();
+            heap.pop();
+            out.push_back({nums1[i], nums2[j]});
+            if (j + 1 < n) heap.emplace((long long)nums1[i] + nums2[j + 1], i, j + 1);   // next in row i
+        }
+        return out;
+    }
+};
+
+=== examples
+[1,7,11]
+[2,4,6]
+3
+> "pair sums [3,5,7]"
+: The pairs are [1,2], [1,4], [1,6].
+
+[1,1,2]
+[1,2,3]
+2
+> "pair sums [2,2]"
+: The pairs are [1,1] and [1,1] (using the two different 1s of nums1).
+
+=== tests
+[1,2]
+[3]
+3
+> "pair sums [4,5]"
+
+[-5,0,5]
+[-5,0,5]
+9
+> "pair sums [-10,-5,-5,0,0,0,5,5,10]"
+
+[1]
+[1]
+1
+> "pair sums [2]"
+
+@@@ problem 295 find-median-from-data-stream
+title: Find Median from Data Stream
+difficulty: Hard
+topics: Two Pointers, Design, Sorting, Heap (Priority Queue), Data Stream
+params: operations, arguments
+time: O(log n) per addNum, O(1) per findMedian
+space: O(n)
+bench: n=64..524288 time=nlogn space=n unit=number_of_operations
+
+=== description
+The **median** is the middle value of an ordered list, or the mean of the two middle values if the list has even length.
+
+Implement `MedianFinder`:
+
+- `MedianFinder()` initializes the object.
+- `void addNum(int num)` adds a number from the data stream.
+- `double findMedian()` returns the median of all numbers so far (answers within `10^-5` are accepted). It is only called after at least one `addNum`.
+
+=== constraints
+- `-10^5 <= num <= 10^5`
+- at most `5 * 10^4` calls in total
+
+=== hints
+- Keep the smaller half in a max-heap and the larger half in a min-heap.
+- Keep their sizes equal or the max-heap one bigger; then the median is at the tops.
+
+=== template
+class MedianFinder {
+public:
+    MedianFinder() {
+
+    }
+
+    void addNum(int num) {
+
+    }
+
+    double findMedian() {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.design<MedianFinder>()
+        .method("addNum", &MedianFinder::addNum)
+        .method("findMedian", &MedianFinder::findMedian);
+    h.gen([](lc::Gen &g, int n) {
+        lc::Ops ops;
+        ops.add("MedianFinder");
+        ops.add("addNum", g.irange(-100000, 100000));
+        for (int i = 1; i < n; ++i) {
+            if (g.coin(0.6)) ops.add("addNum", g.irange(-100000, 100000));
+            else ops.add("findMedian");
+        }
+        ops.add("findMedian");
+        return ops.lines();
+    });
+}
+
+=== approach
+Split the numbers into two halves:
+
+- `low`: a **max-heap** with the smaller half;
+- `high`: a **min-heap** with the larger half.
+
+Invariant: every number in `low` is `<=` every number in `high`, and `low` has the same size as `high` or one more. To add a number, push it into `low`, move `low`'s maximum to `high` (restoring the order), and if `high` became larger move its minimum back. The median is `low.top()` for odd counts, or the average of both tops.
+
+=== solution
+class MedianFinder {
+    priority_queue<int> low;                              // max-heap: smaller half
+    priority_queue<int, vector<int>, greater<int>> high;  // min-heap: larger half
+
+public:
+    MedianFinder() {}
+
+    void addNum(int num) {
+        low.push(num);
+        high.push(low.top());          // largest of the small half moves up
+        low.pop();
+        if (high.size() > low.size()) {// keep low as big as high (or one bigger)
+            low.push(high.top());
+            high.pop();
+        }
+    }
+
+    double findMedian() {
+        if (low.size() > high.size()) return low.top();
+        return ((long long)low.top() + high.top()) / 2.0;
+    }
+};
+
+=== examples
+["MedianFinder","addNum","addNum","findMedian","addNum","findMedian"]
+[[],[1],[2],[],[3],[]]
+> [null,null,null,1.50000,null,2.00000]
+
+=== tests
+["MedianFinder","addNum","findMedian"]
+[[],[-7],[]]
+> [null,null,-7.00000]
+
+["MedianFinder","addNum","addNum","addNum","addNum","findMedian","addNum","findMedian"]
+[[],[5],[5],[1],[9],[],[-3],[]]
+> [null,null,null,null,null,5.00000,null,5.00000]
+
+["MedianFinder","addNum","addNum","findMedian"]
+[[],[100000],[-100000],[]]
+> [null,null,null,0.00000]

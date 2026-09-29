@@ -1,0 +1,410 @@
+@@ category: 1D DP
+
+@@@ problem 70 climbing-stairs
+title: Climbing Stairs
+difficulty: Easy
+topics: Math, Dynamic Programming, Memoization
+params: n
+time: O(n)
+space: O(1)
+bench: off
+
+=== description
+You are climbing a staircase with `n` steps. Each time you can climb **1 or 2** steps. In how many distinct ways can you reach the top?
+
+=== constraints
+- `1 <= n <= 45`
+
+=== hints
+- To stand on step `i`, your last move came from step `i-1` or step `i-2`.
+- `ways(i) = ways(i-1) + ways(i-2)`: Fibonacci. You only need the last two values.
+
+=== template
+class Solution {
+public:
+    int climbStairs(int n) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::climbStairs);
+    h.gen([](lc::Gen &g, int) { return lc::lines(g.irange(1, 45)); });
+}
+
+=== approach
+Let `ways(i)` be the number of ways to reach step `i`. The last move onto step `i` is either a 1-step from `i-1` or a 2-step from `i-2`, and these cases don't overlap, so `ways(i) = ways(i-1) + ways(i-2)` with `ways(0) = ways(1) = 1`. That's the Fibonacci recurrence. Keep only the two previous values: O(n) time, O(1) space.
+
+=== solution
+class Solution {
+public:
+    int climbStairs(int n) {
+        int prev2 = 1, prev1 = 1;          // ways(i-2), ways(i-1)
+        for (int i = 2; i <= n; ++i) {
+            int cur = prev1 + prev2;       // last move was 1 step or 2 steps
+            prev2 = prev1;
+            prev1 = cur;
+        }
+        return prev1;
+    }
+};
+
+=== examples
+2
+> 2
+: 1+1 or 2.
+
+3
+> 3
+: 1+1+1, 1+2, 2+1.
+
+=== tests
+1
+> 1
+
+5
+> 8
+
+45
+> 1836311903
+
+@@@ problem 198 house-robber
+title: House Robber
+difficulty: Medium
+topics: Array, Dynamic Programming
+params: nums
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1
+
+=== description
+Houses along a street hold `nums[i]` money each. You can't rob two **adjacent** houses (the alarm would go off). Return the maximum amount you can rob.
+
+=== constraints
+- `1 <= nums.length <= 100`
+- `0 <= nums[i] <= 400`
+
+=== hints
+- For each house, either rob it (then skip the previous one) or skip it.
+- `best(i) = max(best(i-1), best(i-2) + nums[i])`.
+
+=== template
+class Solution {
+public:
+    int rob(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::rob);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.ints(std::max(n, 1), 0, 400)); });
+}
+
+=== approach
+Let `best(i)` be the most money from houses `0..i`. For house `i`: skip it and keep `best(i-1)`, or rob it and add its money to `best(i-2)` (house `i-1` must then be skipped). Take the larger. Only the previous two values are needed.
+
+=== solution
+class Solution {
+public:
+    int rob(vector<int>& nums) {
+        int skip = 0, take = 0;            // best(i-2), best(i-1)
+        for (int x : nums) {
+            int cur = max(take, skip + x); // skip house i, or rob it
+            skip = take;
+            take = cur;
+        }
+        return take;
+    }
+};
+
+=== examples
+[1,2,3,1]
+> 4
+: Rob houses 0 and 2: 1 + 3 = 4.
+
+[2,7,9,3,1]
+> 12
+: Rob houses 0, 2 and 4: 2 + 9 + 1 = 12.
+
+=== tests
+[0]
+> 0
+
+[5,1]
+> 5
+
+[2,1,1,2]
+> 4
+
+[400,400,400]
+> 800
+
+@@@ problem 139 word-break
+title: Word Break
+difficulty: Medium
+topics: Array, Hash Table, String, Dynamic Programming, Trie, Memoization
+params: s, wordDict
+time: O(n · L²)
+space: O(n)
+bench: n=64..262144 time=n space=n unit=s.length_(words_≤_5_letters)
+
+=== description
+Given a string `s` and a dictionary `wordDict`, return `true` if `s` can be split into a sequence of one or more dictionary words (separated by nothing). Words may be reused any number of times.
+
+=== constraints
+- `1 <= s.length <= 300`
+- `1 <= wordDict.length <= 1000`, `1 <= wordDict[i].length <= 20`
+- all strings are lowercase; dictionary words are unique
+
+=== hints
+- `ok[i]` = can the prefix `s[0..i)` be segmented? `ok[0] = true`.
+- `ok[i]` is true if some word ends at `i` and `ok[i - len(word)]` is true. Only word lengths that exist in the dictionary matter.
+
+=== template
+class Solution {
+public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::wordBreak);
+    h.gen([](lc::Gen &g, int n) {
+        if (n > 40)   // benchmark: the classic worst case, answer false after full DP
+            return lc::lines(std::string(n - 1, 'a') + "b", std::vector<std::string>{"a", "aa", "aaa", "aaaa", "aaaaa"});
+        std::set<std::string> dict;
+        for (int i = 0, k = g.irange(1, 5); i < k; ++i) dict.insert(g.lower(g.irange(1, 3), 2));
+        std::vector<std::string> d(dict.begin(), dict.end());
+        std::string s;
+        while ((int)s.size() < std::max(1, n)) s += g.pick(d);
+        if (g.coin(0.4)) s[g.irange(0, (int)s.size() - 1)] = 'a' + g.irange(0, 2);
+        return lc::lines(s, d);
+    });
+}
+
+=== approach
+Dynamic programming over prefixes: `ok[i]` says whether `s[0..i)` splits into words. `ok[0] = true` (empty prefix). For each end `i`, try every possible word length `len` (only lengths present in the dictionary, at most the longest word): if `ok[i - len]` holds and `s.substr(i - len, len)` is a word, then `ok[i] = true`.
+
+With `n = |s|` and longest word `L`, there are O(n · L) substring checks, each hashing O(L) characters.
+
+=== solution
+class Solution {
+public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+        unordered_set<string> words(wordDict.begin(), wordDict.end());
+        size_t maxLen = 0;
+        for (auto &w : wordDict) maxLen = max(maxLen, w.size());
+        int n = s.size();
+        vector<char> ok(n + 1, false);
+        ok[0] = true;                                     // empty prefix
+        for (int i = 1; i <= n; ++i) {
+            for (int len = 1; len <= (int)maxLen && len <= i; ++len) {
+                // last word is s[i-len, i)
+                if (ok[i - len] && words.count(s.substr(i - len, len))) {
+                    ok[i] = true;
+                    break;
+                }
+            }
+        }
+        return ok[n];
+    }
+};
+
+=== examples
+"leetcode"
+["leet","code"]
+> true
+
+"applepenapple"
+["apple","pen"]
+> true
+: Words may be reused.
+
+"catsandog"
+["cats","dog","sand","and","cat"]
+> false
+
+=== tests
+"a"
+["b"]
+> false
+
+"aaaaaaa"
+["aaaa","aaa"]
+> true
+
+"cars"
+["car","ca","rs"]
+> true
+
+"aaab"
+["a","aa"]
+> false
+
+@@@ problem 322 coin-change
+title: Coin Change
+difficulty: Medium
+topics: Array, Dynamic Programming, Breadth-First Search
+params: coins, amount
+time: O(amount · coins)
+space: O(amount)
+bench: n=64..1048576 time=n space=n unit=amount_(5_coins)
+
+=== description
+Given coin denominations `coins` and a total `amount`, return the **fewest** coins needed to make up exactly that amount, or `-1` if it's impossible. You have an unlimited supply of each coin.
+
+=== constraints
+- `1 <= coins.length <= 12`
+- `1 <= coins[i] <= 2^31 - 1`
+- `0 <= amount <= 10^4`
+
+=== hints
+- Greedy (always take the biggest coin) fails, e.g. coins `[1,3,4]`, amount 6.
+- `best[a] = 1 + min(best[a - c])` over coins `c <= a`, with `best[0] = 0`.
+
+=== template
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::coinChange);
+    h.gen([](lc::Gen &g, int n) {
+        if (n > 40) return lc::lines(std::vector<int>{7, 13, 29, 101, 997}, n);
+        return lc::lines(g.distinct(g.irange(1, 4), 1, 12), g.irange(0, 4 * n));
+    });
+}
+
+=== approach
+Bottom-up DP: `best[a]` is the fewest coins summing to `a`, with `best[0] = 0` and "infinity" meaning impossible. For every amount `a` from 1 to `amount`, try each coin `c <= a` as the **last** coin: `best[a] = min(best[a], best[a - c] + 1)`. The answer is `best[amount]`, or `-1` if it is still infinity. The work is O(amount · number of coins).
+
+=== solution
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        const int INF = INT_MAX / 2;
+        vector<int> best(amount + 1, INF);
+        best[0] = 0;                                   // zero coins make zero
+        for (int a = 1; a <= amount; ++a)
+            for (int c : coins)
+                if (c <= a && best[a - c] + 1 < best[a])
+                    best[a] = best[a - c] + 1;         // use coin c last
+        return best[amount] >= INF ? -1 : best[amount];
+    }
+};
+
+=== examples
+[1,2,5]
+11
+> 3
+: 11 = 5 + 5 + 1.
+
+[2]
+3
+> -1
+
+[1]
+0
+> 0
+
+=== tests
+[1,3,4]
+6
+> 2
+
+[2147483647]
+2
+> -1
+
+[186,419,83,408]
+6249
+> 20
+
+@@@ problem 300 longest-increasing-subsequence
+title: Longest Increasing Subsequence
+difficulty: Medium
+topics: Array, Binary Search, Dynamic Programming
+params: nums
+time: O(n log n)
+space: O(n)
+bench: n=64..1048576 time=nlogn space=n
+
+=== description
+Given an integer array `nums`, return the length of the longest **strictly increasing subsequence**.
+
+Follow-up: an O(n²) DP is straightforward; can you reach O(n log n)?
+
+=== constraints
+- `1 <= nums.length <= 2500`
+- `-10^4 <= nums[i] <= 10^4`
+
+=== hints
+- O(n²): `lis[i] = 1 + max(lis[j])` over `j < i` with `nums[j] < nums[i]`.
+- O(n log n): keep `tails[k]`, the smallest possible tail of an increasing subsequence of length `k + 1`. It stays sorted, so binary search where each number goes.
+
+=== template
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::lengthOfLIS);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.ints(std::max(n, 1), -10000 - n, 10000 + n)); });
+}
+
+=== approach
+**Patience sorting.** Maintain `tails`, where `tails[k]` is the smallest tail value of any increasing subsequence of length `k + 1` seen so far. This array is always strictly increasing.
+
+For each number `x`, find the first tail `>= x` (binary search, `lower_bound`). If there is none, `x` extends the longest subsequence: append it. Otherwise replace that tail with `x`: a subsequence of that length can now end with a smaller value, which is never worse. The length of `tails` is the answer. Each step costs O(log n).
+
+=== solution
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        vector<int> tails;   // tails[k] = smallest tail of an increasing subsequence of length k+1
+        for (int x : nums) {
+            auto it = lower_bound(tails.begin(), tails.end(), x);   // first tail >= x
+            if (it == tails.end()) tails.push_back(x);              // extends the longest one
+            else *it = x;                                           // better (smaller) tail
+        }
+        return tails.size();
+    }
+};
+
+=== examples
+[10,9,2,5,3,7,101,18]
+> 4
+: For example [2,3,7,101].
+
+[0,1,0,3,2,3]
+> 4
+
+[7,7,7,7,7,7,7]
+> 1
+: Strictly increasing, so equal values don't count.
+
+=== tests
+[1]
+> 1
+
+[5,4,3,2,1]
+> 1
+
+[1,3,6,7,9,4,10,5,6]
+> 6
+
+[4,10,4,3,8,9]
+> 3

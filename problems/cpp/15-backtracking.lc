@@ -360,7 +360,7 @@ params: n
 time: O(n!)
 space: O(n)
 stress: 9
-bench: n=4..12 step=+1 time=n! space=n unit=board_size
+bench: n=4..12 step=+1 time=4^n space=n unit=board_size
 
 === description
 The **n-queens** puzzle asks how to place `n` queens on an `n x n` chessboard so that no two queens attack each other (no two share a row, column or diagonal).

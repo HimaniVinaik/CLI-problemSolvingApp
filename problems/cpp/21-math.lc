@@ -1,0 +1,520 @@
+@@ category: Math
+
+@@@ problem 9 palindrome-number
+title: Palindrome Number
+difficulty: Easy
+topics: Math
+params: x
+time: O(log x)
+space: O(1)
+bench: off
+
+=== description
+Given an integer `x`, return `true` if it reads the same forwards and backwards in decimal.
+
+Follow-up: solve it without converting the integer to a string.
+
+=== constraints
+- `-2^31 <= x <= 2^31 - 1`
+
+=== hints
+- Negative numbers are never palindromes (the `-` sign), and neither are positive numbers ending in 0.
+- Reverse only the **second half** of the digits and compare it with the first half; that also avoids overflow.
+
+=== template
+class Solution {
+public:
+    bool isPalindrome(int x) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isPalindrome);
+    h.gen([](lc::Gen &g, int) {
+        if (g.coin(0.5)) {
+            std::string half = std::to_string(g.irange(1, 99999));
+            std::string r(half.rbegin(), half.rend());
+            std::string s = half + (g.coin() ? std::string(1, '0' + g.irange(0, 9)) : "") + r;
+            long long v = std::stoll(s);
+            if (v <= INT_MAX) return lc::lines((int)v);
+        }
+        return lc::lines(g.irange(INT_MIN, INT_MAX));
+    });
+}
+
+=== approach
+Negative numbers and numbers ending in 0 (other than 0 itself) can't be palindromes. Otherwise, pop digits from the end of `x` and push them onto `rev` until `rev >= x`: now `rev` is the reversed second half. For an even digit count the halves must be equal; for an odd count, ignore the middle digit (`rev / 10`). Only half of the number is reversed, so there is no overflow risk.
+
+=== solution
+class Solution {
+public:
+    bool isPalindrome(int x) {
+        if (x < 0 || (x % 10 == 0 && x != 0)) return false;
+        int rev = 0;
+        while (x > rev) {                  // reverse the second half of the digits
+            rev = rev * 10 + x % 10;
+            x /= 10;
+        }
+        return x == rev || x == rev / 10;  // even / odd number of digits
+    }
+};
+
+=== examples
+121
+> true
+
+-121
+> false
+: From right to left it reads 121-.
+
+10
+> false
+
+=== tests
+0
+> true
+
+7
+> true
+
+1221
+> true
+
+2147483647
+> false
+
+1000021
+> false
+
+@@@ problem 66 plus-one
+title: Plus One
+difficulty: Easy
+topics: Array, Math
+params: digits
+time: O(n)
+space: O(1) extra (output excluded)
+bench: n=64..1048576 time=n space=n unit=number_of_digits_(all_9s)
+
+=== description
+A large non-negative integer is given as an array of `digits`, most significant digit first, without leading zeros. Add one to it and return the resulting array of digits.
+
+=== constraints
+- `1 <= digits.length <= 100`
+- `0 <= digits[i] <= 9`
+- no leading zeros
+
+=== hints
+- Start from the last digit. A 9 becomes 0 and the carry moves left; anything else just increments and you're done.
+- If every digit was 9, the answer is `1` followed by zeros.
+
+=== template
+class Solution {
+public:
+    vector<int> plusOne(vector<int>& digits) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::plusOne);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        if (n > 40) return lc::lines(std::vector<int>(n, 9));   // benchmark: carry runs all the way
+        auto d = g.ints(n, 0, 9);
+        if (d[0] == 0 && n > 1) d[0] = g.irange(1, 9);
+        if (g.coin(0.3)) for (int i = g.irange(0, n - 1); i < n; ++i) d[i] = 9;
+        return lc::lines(d);
+    });
+}
+
+=== approach
+Add one at the last digit and propagate the carry: while the digit is 9 it becomes 0 and we move left; the first digit that isn't 9 just increments and we can stop. If we run off the front, every digit was 9: the answer is `1` followed by `n` zeros.
+
+=== solution
+class Solution {
+public:
+    vector<int> plusOne(vector<int>& digits) {
+        for (int i = (int)digits.size() - 1; i >= 0; --i) {
+            if (digits[i] < 9) {
+                digits[i]++;           // no carry beyond this point
+                return digits;
+            }
+            digits[i] = 0;             // 9 + 1 = 10: write 0, carry on
+        }
+        digits.insert(digits.begin(), 1);   // all nines: 99...9 + 1 = 100...0
+        return digits;
+    }
+};
+
+=== examples
+[1,2,3]
+> [1,2,4]
+
+[4,3,2,1]
+> [4,3,2,2]
+
+[9]
+> [1,0]
+
+=== tests
+[0]
+> [1]
+
+[9,9,9]
+> [1,0,0,0]
+
+[1,9,9]
+> [2,0,0]
+
+@@@ problem 172 factorial-trailing-zeroes
+title: Factorial Trailing Zeroes
+difficulty: Medium
+topics: Math
+params: n
+time: O(log n)
+space: O(1)
+bench: off
+
+=== description
+Given an integer `n`, return the number of trailing zeroes in `n!`.
+
+Follow-up: can you do it in logarithmic time?
+
+=== constraints
+- `0 <= n <= 10^4`
+
+=== hints
+- Every trailing zero comes from a factor 10 = 2 × 5, and there are always more 2s than 5s.
+- Count the factors of 5 in `1..n`: multiples of 5, plus multiples of 25 (an extra 5), plus multiples of 125, …
+
+=== template
+class Solution {
+public:
+    int trailingZeroes(int n) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::trailingZeroes);
+    h.gen([](lc::Gen &g, int) { return lc::lines(g.irange(0, 10000)); });
+}
+
+=== approach
+A trailing zero needs a factor 10 = 2 · 5. Among `1..n` there are far more even numbers than multiples of 5, so the count of **factors of 5** decides. Multiples of 5 contribute one each, multiples of 25 one more, multiples of 125 another, and so on: `n/5 + n/25 + n/125 + ...`. Dividing `n` by 5 repeatedly computes this sum in O(log n).
+
+=== solution
+class Solution {
+public:
+    int trailingZeroes(int n) {
+        int zeros = 0;
+        while (n > 0) {
+            n /= 5;          // multiples of 5, then of 25, 125, ...
+            zeros += n;
+        }
+        return zeros;
+    }
+};
+
+=== examples
+3
+> 0
+: 3! = 6.
+
+5
+> 1
+: 5! = 120.
+
+0
+> 0
+
+=== tests
+25
+> 6
+
+100
+> 24
+
+10000
+> 2499
+
+@@@ problem 69 sqrtx
+title: Sqrt(x)
+difficulty: Easy
+topics: Math, Binary Search
+params: x
+time: O(log x)
+space: O(1)
+bench: off
+
+=== description
+Given a non-negative integer `x`, return the square root of `x` **rounded down** to the nearest integer.
+
+Do not use built-in power or square root functions (`pow`, `sqrt`, `x ** 0.5`, …).
+
+=== constraints
+- `0 <= x <= 2^31 - 1`
+
+=== hints
+- The answer is the largest `r` with `r * r <= x`. That predicate is monotone: binary search.
+- Use 64-bit arithmetic for `r * r`.
+
+=== template
+class Solution {
+public:
+    int mySqrt(int x) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::mySqrt);
+    h.gen([](lc::Gen &g, int) {
+        long long r = g.range(0, 46340);
+        long long x = g.coin(0.3) ? r * r + g.irange(-1, 1) : g.range(0, 2147483647);
+        return lc::lines((int)std::max(0LL, std::min(x, 2147483647LL)));
+    });
+}
+
+=== approach
+Binary search for the largest `r` with `r² <= x`. Keep `lo` as a value known to satisfy it and shrink `[lo, hi]`: if `mid² <= x`, `mid` is a valid candidate so move `lo` up to it; otherwise `hi = mid - 1`. Using an upper-biased midpoint avoids an infinite loop, and `long long` avoids overflow when squaring.
+
+=== solution
+class Solution {
+public:
+    int mySqrt(int x) {
+        long long lo = 0, hi = x;
+        while (lo < hi) {
+            long long mid = lo + (hi - lo + 1) / 2;   // upper middle: guarantees progress
+            if (mid * mid <= x) lo = mid;             // mid is still small enough
+            else hi = mid - 1;
+        }
+        return (int)lo;
+    }
+};
+
+=== examples
+4
+> 2
+
+8
+> 2
+: The square root of 8 is 2.828…, rounded down to 2.
+
+=== tests
+0
+> 0
+
+1
+> 1
+
+2147483647
+> 46340
+
+2147395600
+> 46340
+
+@@@ problem 50 powx-n
+title: Pow(x, n)
+difficulty: Medium
+topics: Math, Recursion
+params: x, n
+time: O(log n)
+space: O(1)
+bench: n=64..1073741824 time=logn space=1 unit=exponent_n
+
+=== description
+Implement `pow(x, n)`: compute `x` raised to the integer power `n`. Answers within `10^-5` (relative) are accepted.
+
+=== constraints
+- `-100.0 < x < 100.0`
+- `-2^31 <= n <= 2^31 - 1`
+- `n` is an integer; either `x` is not zero or `n > 0`
+- `-10^4 <= x^n <= 10^4`
+
+=== hints
+- `x^n = (x²)^(n/2)` for even `n`: square and halve (fast exponentiation).
+- Negative `n`: compute `(1/x)^|n|`, and be careful that `-INT_MIN` overflows an `int`.
+
+=== template
+class Solution {
+public:
+    double myPow(double x, int n) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::myPow);
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        if (n > 40) return lc::lines(g.coin() ? 1.0 : -1.0, g.coin() ? n : -n);   // benchmark: huge exponent
+        double x = std::round(g.real(-2.0, 2.0) * 100) / 100;
+        if (std::fabs(x) < 0.5) x = x < 0 ? -0.5 : 0.5;
+        int e = g.irange(-12, 12);
+        return lc::lines(x, e);
+    });
+}
+
+=== approach
+**Binary exponentiation.** Write the exponent in binary: `x^13 = x^8 · x^4 · x^1`. Walk the bits of `|n|` from low to high while repeatedly squaring a base (`x, x², x⁴, x⁸, …`); multiply the result by the base whenever the current bit is 1. That takes O(log n) multiplications.
+
+For negative `n`, compute with `1/x` and the absolute value. Store `|n|` in a `long long`, because `-(-2^31)` doesn't fit in an `int`.
+
+=== solution
+class Solution {
+public:
+    double myPow(double x, int n) {
+        long long e = n;              // 64-bit: -INT_MIN overflows int
+        if (e < 0) {
+            x = 1 / x;
+            e = -e;
+        }
+        double result = 1.0, base = x;
+        while (e > 0) {
+            if (e & 1) result *= base;   // this bit of the exponent is set
+            base *= base;                // x, x^2, x^4, x^8, ...
+            e >>= 1;
+        }
+        return result;
+    }
+};
+
+=== examples
+2.00000
+10
+> 1024.00000
+
+2.10000
+3
+> 9.26100
+
+2.00000
+-2
+> 0.25000
+: 2^-2 = 1/4 = 0.25.
+
+=== tests
+1.00000
+-2147483648
+> 1.00000
+
+-1.00000
+2147483647
+> -1.00000
+
+0.50000
+0
+> 1.00000
+
+-2.00000
+3
+> -8.00000
+
+0.00001
+1
+> 0.00001
+
+@@@ problem 149 max-points-on-a-line
+title: Max Points on a Line
+difficulty: Hard
+topics: Array, Hash Table, Math, Geometry
+params: points
+time: O(n²)
+space: O(n)
+bench: n=16..2048 time=n^2 space=n unit=number_of_points
+
+=== description
+Given an array of distinct `points` where `points[i] = [x_i, y_i]`, return the maximum number of points that lie on the **same straight line**.
+
+=== constraints
+- `1 <= points.length <= 300`
+- `-10^4 <= x_i, y_i <= 10^4`
+- all points are distinct
+
+=== hints
+- Fix one point as an anchor; every other point defines a slope. Points with the same slope from the anchor are on one line.
+- Avoid floating-point slopes: store the direction `(dy, dx)` reduced by their gcd, with a normalized sign.
+
+=== template
+class Solution {
+public:
+    int maxPoints(vector<vector<int>>& points) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::maxPoints);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        int R = n <= 40 ? 6 : 10000;
+        std::set<std::pair<int, int>> pts;
+        // a few collinear points so the answer is interesting
+        int ax = g.irange(-R, R), ay = g.irange(-R, R), dx = g.irange(-2, 2), dy = g.irange(-2, 2);
+        if (dx == 0 && dy == 0) dx = 1;
+        for (int k = 0; k < std::min(n, 2 + n / 8); ++k) {
+            long long x = ax + (long long)dx * k, y = ay + (long long)dy * k;
+            if (std::llabs(x) <= 10000 && std::llabs(y) <= 10000) pts.insert({(int)x, (int)y});
+        }
+        long long cap = (2LL * R + 1) * (2LL * R + 1);
+        while ((long long)pts.size() < std::min<long long>(n, cap)) pts.insert({g.irange(-R, R), g.irange(-R, R)});
+        std::vector<std::vector<int>> v;
+        for (auto &[x, y] : pts) v.push_back({x, y});
+        g.shuffle(v);
+        return lc::lines(v);
+    });
+}
+
+=== approach
+A line is determined by a point and a direction. For each point `i` as anchor, compute the direction to every later point `j`: `(dy, dx)` divided by `gcd(|dy|, |dx|)`, with the sign normalized (e.g. make `dx > 0`, or `dy > 0` when `dx == 0`). Count identical directions in a hash map: points sharing a direction lie on the same line through `i`. The best count + 1 (the anchor) over all anchors is the answer.
+
+Exact integer directions avoid floating-point precision problems.
+
+=== solution
+class Solution {
+public:
+    int maxPoints(vector<vector<int>>& points) {
+        int n = points.size(), best = 1;
+        for (int i = 0; i < n; ++i) {
+            map<pair<int, int>, int> slopes;      // reduced direction -> count
+            for (int j = i + 1; j < n; ++j) {
+                int dx = points[j][0] - points[i][0];
+                int dy = points[j][1] - points[i][1];
+                int g = gcd(abs(dx), abs(dy));
+                dx /= g;
+                dy /= g;
+                if (dx < 0 || (dx == 0 && dy < 0)) { dx = -dx; dy = -dy; }   // one sign per direction
+                best = max(best, ++slopes[{dy, dx}] + 1);                      // +1 for the anchor
+            }
+        }
+        return best;
+    }
+};
+
+=== examples
+[[1,1],[2,2],[3,3]]
+> 3
+
+[[1,1],[3,2],[5,3],[4,1],[2,3],[1,4]]
+> 4
+
+=== tests
+[[0,0]]
+> 1
+
+[[0,0],[1,1]]
+> 2
+
+[[0,0],[0,1],[0,2],[1,0]]
+> 3
+
+[[-10000,-10000],[10000,10000],[0,0],[1,2]]
+> 3

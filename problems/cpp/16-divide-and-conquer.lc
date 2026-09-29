@@ -303,7 +303,7 @@ LC_DRIVER {
             Node *x = q[i];
             if (!x) { parts.push_back("null"); continue; }
             parts.push_back(x->isLeaf ? (x->val ? "[1,1]" : "[1,0]") : "[0,1]");
-            if (x->isLeaf) continue;
+            if (x->isLeaf) { for (int k = 0; k < 4; ++k) q.push_back(nullptr); continue; }   // leaves: 4 null children
             for (Node *ch : {x->topLeft, x->topRight, x->bottomLeft, x->bottomRight}) q.push_back(ch);
         }
         while (!parts.empty() && parts.back() == "null") parts.pop_back();
@@ -408,7 +408,7 @@ public:
 > [[1,0]]
 
 [[1,1,0,0],[1,1,0,0],[0,0,1,1],[0,0,1,0]]
-> [[0,1],[1,1],[1,0],[1,0],[0,1],[1,1],[1,1],[1,1],[1,0]]
+> [[0,1],[1,1],[1,0],[1,0],[0,1],null,null,null,null,null,null,null,null,null,null,null,null,[1,1],[1,1],[1,1],[1,0]]
 
 @@@ problem 23 merge-k-sorted-lists
 title: Merge k Sorted Lists

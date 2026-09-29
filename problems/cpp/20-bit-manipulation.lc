@@ -1,0 +1,481 @@
+@@ category: Bit Manipulation
+
+@@@ problem 67 add-binary
+title: Add Binary
+difficulty: Easy
+topics: Math, String, Bit Manipulation, Simulation
+params: a, b
+time: O(max(m, n))
+space: O(max(m, n))
+bench: n=64..1048576 time=n space=n unit=digits
+
+=== description
+Given two binary strings `a` and `b`, return their sum as a binary string.
+
+=== constraints
+- `1 <= a.length, b.length <= 10^4`
+- `a` and `b` consist only of `'0'` and `'1'`
+- no leading zeros except for `"0"` itself
+
+=== hints
+- Add from the least significant digit (the end of the strings), carrying like in decimal addition.
+- Build the result backwards and reverse it at the end.
+
+=== template
+class Solution {
+public:
+    string addBinary(string a, string b) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::addBinary);
+    h.gen([](lc::Gen &g, int n) {
+        auto bin = [&](int len) {
+            std::string s = "1" + g.str(std::max(0, len - 1), "01");
+            if (g.coin(0.1)) s = "0";
+            if (g.coin(0.1)) s = std::string(len, '1');
+            return s;
+        };
+        return lc::lines(bin(std::max(n, 1)), bin(g.irange(1, std::max(n, 1))));
+    });
+}
+
+=== approach
+Walk both strings from the end with indices `i` and `j` and a `carry`. At each step add the available digits and the carry: the result digit is `sum % 2` and the new carry `sum / 2`. Continue while either string has digits or a carry remains. Digits are produced least-significant first, so reverse the result at the end.
+
+=== solution
+class Solution {
+public:
+    string addBinary(string a, string b) {
+        string out;
+        int i = (int)a.size() - 1, j = (int)b.size() - 1, carry = 0;
+        while (i >= 0 || j >= 0 || carry) {
+            int sum = carry;
+            if (i >= 0) sum += a[i--] - '0';
+            if (j >= 0) sum += b[j--] - '0';
+            out.push_back('0' + sum % 2);    // current bit
+            carry = sum / 2;
+        }
+        reverse(out.begin(), out.end());     // we built it least-significant first
+        return out;
+    }
+};
+
+=== examples
+"11"
+"1"
+> "100"
+
+"1010"
+"1011"
+> "10101"
+
+=== tests
+"0"
+"0"
+> "0"
+
+"1"
+"111"
+> "1000"
+
+"1111"
+"1111"
+> "11110"
+
+@@@ problem 190 reverse-bits
+title: Reverse Bits
+difficulty: Easy
+topics: Divide and Conquer, Bit Manipulation
+params: n
+time: O(1)
+space: O(1)
+bench: off
+
+=== description
+Reverse the bits of a 32-bit unsigned integer `n`: bit 0 becomes bit 31, bit 1 becomes bit 30, and so on. Return the result.
+
+In this judge, inputs and outputs are written as ordinary decimal integers.
+
+Follow-up: if this function is called many times, how would you optimize it?
+
+=== constraints
+- `0 <= n <= 2^32 - 1`
+
+=== hints
+- Shift the answer left and append `n`'s lowest bit, 32 times.
+- Faster: swap halves, then quarters, then bytes, … with masks (divide and conquer).
+
+=== template
+class Solution {
+public:
+    uint32_t reverseBits(uint32_t n) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::reverseBits);
+    h.gen([](lc::Gen &g, int) { return lc::lines((uint32_t)g.range(0, 4294967295LL)); });
+}
+
+=== approach
+Process the 32 bits one at a time: shift the result left by one, OR in the lowest bit of `n`, then shift `n` right. After 32 steps the first bit read (bit 0) has moved all the way to bit 31.
+
+For repeated calls you could use a 256-entry table of reversed bytes, or the mask trick that swaps 16-bit halves, then 8-bit groups, 4, 2 and 1.
+
+=== solution
+class Solution {
+public:
+    uint32_t reverseBits(uint32_t n) {
+        uint32_t result = 0;
+        for (int i = 0; i < 32; ++i) {
+            result = (result << 1) | (n & 1);   // append n's lowest bit
+            n >>= 1;
+        }
+        return result;
+    }
+};
+
+=== examples
+43261596
+> 964176192
+: 00000010100101000001111010011100 reversed is 00111001011110000010100101000000.
+
+4294967293
+> 3221225471
+
+=== tests
+0
+> 0
+
+1
+> 2147483648
+
+4294967295
+> 4294967295
+
+2147483648
+> 1
+
+@@@ problem 191 number-of-1-bits
+title: Number of 1 Bits
+difficulty: Easy
+topics: Divide and Conquer, Bit Manipulation
+params: n
+time: O(number of set bits)
+space: O(1)
+bench: off
+
+=== description
+Given a positive integer `n`, return the number of set bits (`1`s) in its binary representation (its **Hamming weight**).
+
+=== constraints
+- `1 <= n <= 2^31 - 1`
+
+=== hints
+- `n & (n - 1)` clears the lowest set bit.
+
+=== template
+class Solution {
+public:
+    int hammingWeight(int n) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::hammingWeight);
+    h.gen([](lc::Gen &g, int) { return lc::lines(g.irange(1, 2147483647)); });
+}
+
+=== approach
+`n & (n - 1)` turns off the **lowest set bit** of `n` (subtracting 1 flips that bit and all zeros below it). Repeat until `n` is 0 and count the iterations: the loop runs once per set bit.
+
+=== solution
+class Solution {
+public:
+    int hammingWeight(int n) {
+        int count = 0;
+        while (n) {
+            n &= n - 1;     // clear the lowest set bit
+            ++count;
+        }
+        return count;
+    }
+};
+
+=== examples
+11
+> 3
+: 11 = 1011 in binary.
+
+128
+> 1
+
+2147483645
+> 30
+
+=== tests
+1
+> 1
+
+2147483647
+> 31
+
+1073741824
+> 1
+
+@@@ problem 136 single-number
+title: Single Number
+difficulty: Easy
+topics: Array, Bit Manipulation
+params: nums
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1
+
+=== description
+Every element of the non-empty array `nums` appears **twice** except for one. Find that single one.
+
+Use linear time and only constant extra space.
+
+=== constraints
+- `1 <= nums.length <= 3 * 10^4`
+- `-3 * 10^4 <= nums[i] <= 3 * 10^4`
+- exactly one element appears once; every other element appears exactly twice
+
+=== hints
+- XOR is its own inverse: `x ^ x = 0` and `x ^ 0 = x`, and the order doesn't matter.
+
+=== template
+class Solution {
+public:
+    int singleNumber(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::singleNumber);
+    h.gen([](lc::Gen &g, int n) {
+        int pairs = std::max(0, n / 2);
+        auto vals = g.distinct(pairs + 1, -30000 - n, 30000 + n);
+        std::vector<int> v;
+        for (int i = 0; i < pairs; ++i) { v.push_back(vals[i]); v.push_back(vals[i]); }
+        v.push_back(vals[pairs]);
+        g.shuffle(v);
+        return lc::lines(v);
+    });
+}
+
+=== approach
+XOR all numbers together. Pairs cancel (`x ^ x = 0`) regardless of order, because XOR is commutative and associative. What remains is the single number (`0 ^ x = x`).
+
+=== solution
+class Solution {
+public:
+    int singleNumber(vector<int>& nums) {
+        int x = 0;
+        for (int v : nums) x ^= v;   // duplicates cancel out
+        return x;
+    }
+};
+
+=== examples
+[2,2,1]
+> 1
+
+[4,1,2,1,2]
+> 4
+
+[1]
+> 1
+
+=== tests
+[-1]
+> -1
+
+[7,-3,7]
+> -3
+
+[0,5,5]
+> 0
+
+@@@ problem 137 single-number-ii
+title: Single Number II
+difficulty: Medium
+topics: Array, Bit Manipulation
+params: nums
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1
+
+=== description
+Every element of `nums` appears **three times** except for one, which appears exactly once. Find the single one.
+
+Use linear time and only constant extra space.
+
+=== constraints
+- `1 <= nums.length <= 3 * 10^4`
+- `-2^31 <= nums[i] <= 2^31 - 1`
+- one element appears once; every other element appears exactly three times
+
+=== hints
+- Count, for each of the 32 bit positions, how many numbers have that bit set. Modulo 3, what's left?
+- The two-variable trick (`ones`, `twos`) does the same for all bits at once.
+
+=== template
+class Solution {
+public:
+    int singleNumber(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::singleNumber);
+    h.gen([](lc::Gen &g, int n) {
+        int triples = std::max(0, n / 3);
+        auto vals = g.distinct(triples + 1, INT_MIN, INT_MAX);
+        std::vector<int> v;
+        for (int i = 0; i < triples; ++i) for (int k = 0; k < 3; ++k) v.push_back(vals[i]);
+        v.push_back(vals[triples]);
+        g.shuffle(v);
+        return lc::lines(v);
+    });
+}
+
+=== approach
+Think of each bit position separately: over all numbers, the count of set bits at that position is `3 · (something) + (bit of the single number)`. So we need a counter **modulo 3** per bit.
+
+The variables `ones` and `twos` hold such counters for all 32 bits at once: a bit is in `ones` when its count ≡ 1 (mod 3), in `twos` when ≡ 2. For each number `x`:
+
+- `ones = (ones ^ x) & ~twos`
+- `twos = (twos ^ x) & ~ones`
+
+These update the counters and reset them to 0 when they reach 3. At the end `ones` holds exactly the bits of the single number.
+
+=== solution
+class Solution {
+public:
+    int singleNumber(vector<int>& nums) {
+        unsigned ones = 0, twos = 0;      // per-bit counters mod 3 (state 1 / state 2)
+        for (int v : nums) {
+            unsigned x = v;
+            ones = (ones ^ x) & ~twos;    // 0 -> 1, 1 -> 0 (goes to twos), 2 stays out
+            twos = (twos ^ x) & ~ones;    // 1 -> 2, 2 -> 0 (third occurrence)
+        }
+        return (int)ones;                 // bits that appeared 1 (mod 3) times
+    }
+};
+
+=== examples
+[2,2,3,2]
+> 3
+
+[0,1,0,1,0,1,99]
+> 99
+
+=== tests
+[-7]
+> -7
+
+[-2,-2,1,1,4,1,4,4,-4,-2]
+> -4
+
+[2147483647,-2147483648,2147483647,2147483647]
+> -2147483648
+
+@@@ problem 201 bitwise-and-of-numbers-range
+title: Bitwise AND of Numbers Range
+difficulty: Medium
+topics: Bit Manipulation
+params: left, right
+time: O(log right)
+space: O(1)
+bench: off
+
+=== description
+Given two integers `left` and `right` describing the range `[left, right]`, return the bitwise AND of **all** numbers in that range, inclusive.
+
+=== constraints
+- `0 <= left <= right <= 2^31 - 1`
+
+=== hints
+- Any bit that changes somewhere in the range becomes 0 in the result.
+- The answer is the **common binary prefix** of `left` and `right`, followed by zeros.
+
+=== template
+class Solution {
+public:
+    int rangeBitwiseAnd(int left, int right) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::rangeBitwiseAnd);
+    h.gen([](lc::Gen &g, int) {
+        long long a = g.range(0, 2147483647), b = g.coin(0.5) ? a + g.range(0, 64) : g.range(a, 2147483647);
+        return lc::lines((int)a, (int)std::min(b, 2147483647LL));
+    });
+}
+
+=== approach
+Counting from `left` to `right`, every bit position below the highest position where `left` and `right` differ flips at some point, so it ends up 0. Bits above that position are the same in every number of the range. So the answer is the **common prefix** of `left` and `right`.
+
+Find it by shifting both right until they are equal (counting the shifts), then shift back left.
+
+=== solution
+class Solution {
+public:
+    int rangeBitwiseAnd(int left, int right) {
+        int shift = 0;
+        while (left != right) {   // strip differing low bits
+            left >>= 1;
+            right >>= 1;
+            ++shift;
+        }
+        return left << shift;     // common prefix followed by zeros
+    }
+};
+
+=== examples
+5
+7
+> 4
+: 5 & 6 & 7 = 101 & 110 & 111 = 100.
+
+0
+0
+> 0
+
+1
+2147483647
+> 0
+
+=== tests
+7
+7
+> 7
+
+6
+7
+> 6
+
+2147483646
+2147483647
+> 2147483646
+
+1073741824
+2147483647
+> 1073741824

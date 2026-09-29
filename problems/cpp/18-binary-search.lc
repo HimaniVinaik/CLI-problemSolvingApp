@@ -1,0 +1,687 @@
+@@ category: Binary Search
+
+@@@ problem 35 search-insert-position
+title: Search Insert Position
+difficulty: Easy
+topics: Array, Binary Search
+params: nums, target
+time: O(log n)
+space: O(1)
+bench: n=64..1048576 time=logn space=1
+
+=== description
+Given a sorted array of **distinct** integers `nums` and a `target`, return the index of `target` if it is present. Otherwise return the index where it would be inserted to keep the array sorted.
+
+Your algorithm must run in **O(log n)** time.
+
+=== constraints
+- `1 <= nums.length <= 10^4`
+- `-10^4 <= nums[i], target <= 10^4`
+- `nums` is sorted ascending with distinct values
+
+=== hints
+- You are looking for the first index whose value is `>= target` (the "lower bound").
+- Keep the invariant: the answer is always inside `[lo, hi]`.
+
+=== template
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::searchInsert);
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        auto v = g.distinct(std::max(n, 1), -3 * n - 10, 3 * n + 10);
+        std::sort(v.begin(), v.end());
+        int t = g.coin() ? g.pick(v) : g.irange(-3 * n - 12, 3 * n + 12);
+        return lc::lines(v, t);
+    });
+}
+
+=== approach
+Binary search for the **lower bound**: the first index `i` with `nums[i] >= target`. Keep a half-open range `[lo, hi)` that always contains the answer, with `hi = n` meaning "insert at the end". If `nums[mid] < target`, the answer lies right of `mid`; otherwise it is `mid` or to its left. When `lo == hi`, that is the answer: either the target's index or its insertion point.
+
+=== solution
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int lo = 0, hi = nums.size();           // answer is in [lo, hi]
+        while (lo < hi) {
+            int mid = lo + (hi - lo) / 2;       // avoids overflow of lo + hi
+            if (nums[mid] < target) lo = mid + 1;   // answer is right of mid
+            else hi = mid;                          // mid could be the answer
+        }
+        return lo;
+    }
+};
+
+=== examples
+[1,3,5,6]
+5
+> 2
+
+[1,3,5,6]
+2
+> 1
+
+[1,3,5,6]
+7
+> 4
+
+=== tests
+[1]
+0
+> 0
+
+[1]
+1
+> 0
+
+[1]
+2
+> 1
+
+[-5,-2,0,4,9]
+-3
+> 1
+
+@@@ problem 74 search-a-2d-matrix
+title: Search a 2D Matrix
+difficulty: Medium
+topics: Array, Binary Search, Matrix
+params: matrix, target
+time: O(log(m · n))
+space: O(1)
+bench: n=64..1048576 time=logn space=1 unit=number_of_cells
+
+=== description
+You are given an `m x n` integer matrix where each row is sorted ascending and the first value of each row is greater than the last value of the previous row. Return `true` if `target` is in the matrix.
+
+Your solution must run in **O(log(m · n))** time.
+
+=== constraints
+- `1 <= m, n <= 100`
+- `-10^4 <= matrix[i][j], target <= 10^4`
+
+=== hints
+- Read row by row, the matrix is one sorted array of `m · n` elements.
+- Index `k` of that virtual array is `matrix[k / n][k % n]`.
+
+=== template
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::searchMatrix);
+    h.readonly();
+    h.gen([](lc::Gen &g, int cells) {
+        int r = std::max(1, (int)std::sqrt((double)cells) + g.irange(-2, 2)), c = std::max(1, cells / r);
+        auto v = g.sorted_ints(r * c, -3LL * r * c - 10, 3LL * r * c + 10);
+        std::vector<std::vector<int>> m(r);
+        for (int i = 0; i < r; ++i) m[i].assign(v.begin() + i * c, v.begin() + (i + 1) * c);
+        for (int i = 1; i < r; ++i) if (m[i][0] <= m[i - 1][c - 1]) for (int j = 0; j < c; ++j) m[i][j] += 0;
+        // make rows strictly increasing across boundaries
+        long long last = LLONG_MIN;
+        for (auto &row : m) for (auto &x : row) { if (x <= last) x = (int)(last + 1); last = x; }
+        int t = g.coin() ? m[g.irange(0, r - 1)][g.irange(0, c - 1)] : (int)g.range(-3LL * r * c - 12, last + 2);
+        return lc::lines(m, t);
+    });
+}
+
+=== approach
+Because every row starts after the previous one ends, reading the matrix row by row gives one **sorted sequence** of `m · n` values. Binary search over indices `0 .. m·n - 1` of that virtual array, converting index `k` to `matrix[k / n][k % n]`. That is O(log(m · n)) with no extra memory.
+
+=== solution
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int m = matrix.size(), n = matrix[0].size();
+        int lo = 0, hi = m * n - 1;
+        while (lo <= hi) {
+            int mid = lo + (hi - lo) / 2;
+            int v = matrix[mid / n][mid % n];      // virtual 1-D index -> row, column
+            if (v == target) return true;
+            if (v < target) lo = mid + 1;
+            else hi = mid - 1;
+        }
+        return false;
+    }
+};
+
+=== examples
+[[1,3,5,7],[10,11,16,20],[23,30,34,60]]
+3
+> true
+
+[[1,3,5,7],[10,11,16,20],[23,30,34,60]]
+13
+> false
+
+=== tests
+[[1]]
+1
+> true
+
+[[1]]
+2
+> false
+
+[[1,3]]
+3
+> true
+
+[[1],[3],[5]]
+4
+> false
+
+@@@ problem 162 find-peak-element
+title: Find Peak Element
+difficulty: Medium
+topics: Array, Binary Search
+params: nums
+time: O(log n)
+space: O(1)
+bench: n=64..1048576 time=logn space=1
+
+=== description
+A **peak** is an element strictly greater than its neighbours. Given `nums` with `nums[i] != nums[i + 1]` for all valid `i`, return the index of **any** peak. Imagine `nums[-1] = nums[n] = -∞`, so the ends count as higher than the outside.
+
+The judge accepts any peak: it prints `"a peak index"` when yours is one.
+
+Your algorithm must run in **O(log n)** time.
+
+=== constraints
+- `1 <= nums.length <= 1000`
+- `-2^31 <= nums[i] <= 2^31 - 1`
+- `nums[i] != nums[i + 1]`
+
+=== hints
+- Look at `nums[mid]` and `nums[mid + 1]`. If the sequence goes up there, is a peak guaranteed to the right?
+
+=== template
+class Solution {
+public:
+    int findPeakElement(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto nums = c.arg<std::vector<int>>();
+        int r = -1;
+        Solution s;
+        c.time([&] { r = s.findPeakElement(nums); });
+        int n = nums.size();
+        auto at = [&](int i) { return (i < 0 || i >= n) ? LLONG_MIN : (long long)nums[i]; };
+        if (r >= 0 && r < n && at(r) > at(r - 1) && at(r) > at(r + 1)) c.out_text("\"a peak index\"");
+        else c.out(r);
+    });
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        std::vector<int> v(n);
+        v[0] = g.irange(-1000, 1000);
+        for (int i = 1; i < n; ++i) {
+            int step = g.irange(1, 5);
+            v[i] = v[i - 1] + (g.coin(n > 40 ? 0.02 : 0.5) ? -step : step);   // benchmark: long rising runs
+        }
+        return lc::lines(v);
+    });
+}
+
+=== approach
+Binary search on the **slope**. Compare `nums[mid]` with `nums[mid + 1]`:
+
+- if `nums[mid] < nums[mid + 1]`, the sequence rises to the right. Following it upward, it must eventually peak before the `-∞` wall at the end, so a peak exists in `[mid + 1, hi]`;
+- otherwise a peak exists in `[lo, mid]` (possibly `mid` itself).
+
+Each step halves the range, and when `lo == hi` that index is a peak.
+
+=== solution
+class Solution {
+public:
+    int findPeakElement(vector<int>& nums) {
+        int lo = 0, hi = (int)nums.size() - 1;
+        while (lo < hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (nums[mid] < nums[mid + 1]) lo = mid + 1;   // climbing: peak on the right
+            else hi = mid;                                  // descending: peak at mid or left
+        }
+        return lo;
+    }
+};
+
+=== examples
+[1,2,3,1]
+> "a peak index"
+: Index 2 (value 3) is the only peak.
+
+[1,2,1,3,5,6,4]
+> "a peak index"
+: Both index 1 and index 5 are peaks.
+
+=== tests
+[1]
+> "a peak index"
+
+[1,2]
+> "a peak index"
+
+[2,1]
+> "a peak index"
+
+[-2147483648,2147483647,-2147483648]
+> "a peak index"
+
+@@@ problem 33 search-in-rotated-sorted-array
+title: Search in Rotated Sorted Array
+difficulty: Medium
+topics: Array, Binary Search
+params: nums, target
+time: O(log n)
+space: O(1)
+bench: n=64..1048576 time=logn space=1
+
+=== description
+An ascending array of **distinct** integers was rotated at an unknown pivot, e.g. `[0,1,2,4,5,6,7]` became `[4,5,6,7,0,1,2]`. Given the rotated array `nums` and a `target`, return the index of `target`, or `-1` if it is not present.
+
+Your algorithm must run in **O(log n)** time.
+
+=== constraints
+- `1 <= nums.length <= 5000`
+- `-10^4 <= nums[i], target <= 10^4`
+- all values are distinct; `nums` is a rotated ascending array
+
+=== hints
+- Split at `mid`: at least one of the two halves is sorted normally.
+- Check whether the target lies inside the sorted half's range; if so search there, else search the other half.
+
+=== template
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::search);
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        auto v = g.distinct(n, -3 * n - 10, 3 * n + 10);
+        std::sort(v.begin(), v.end());
+        std::rotate(v.begin(), v.begin() + g.irange(0, n - 1), v.end());
+        int t = g.coin() ? g.pick(v) : g.irange(-3 * n - 12, 3 * n + 12);
+        return lc::lines(v, t);
+    });
+}
+
+=== approach
+Standard binary search, but at each step decide which half is **sorted**:
+
+- if `nums[lo] <= nums[mid]`, the left half `[lo, mid]` is sorted. If `nums[lo] <= target < nums[mid]` the target can only be there; otherwise go right;
+- else the right half `[mid, hi]` is sorted; test `nums[mid] < target <= nums[hi]` the same way.
+
+Each step discards half the range: O(log n).
+
+=== solution
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int lo = 0, hi = (int)nums.size() - 1;
+        while (lo <= hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (nums[mid] == target) return mid;
+            if (nums[lo] <= nums[mid]) {                        // left half is sorted
+                if (nums[lo] <= target && target < nums[mid]) hi = mid - 1;
+                else lo = mid + 1;
+            } else {                                            // right half is sorted
+                if (nums[mid] < target && target <= nums[hi]) lo = mid + 1;
+                else hi = mid - 1;
+            }
+        }
+        return -1;
+    }
+};
+
+=== examples
+[4,5,6,7,0,1,2]
+0
+> 4
+
+[4,5,6,7,0,1,2]
+3
+> -1
+
+[1]
+0
+> -1
+
+=== tests
+[1]
+1
+> 0
+
+[3,1]
+1
+> 1
+
+[5,1,3]
+5
+> 0
+
+[6,7,1,2,3,4,5]
+7
+> 1
+
+@@@ problem 34 find-first-and-last-position-of-element-in-sorted-array
+title: Find First and Last Position of Element in Sorted Array
+difficulty: Medium
+topics: Array, Binary Search
+params: nums, target
+time: O(log n)
+space: O(1)
+bench: n=64..1048576 time=logn space=1
+
+=== description
+Given `nums` sorted in non-decreasing order, find the first and last positions of `target`. Return `[-1, -1]` if it does not occur.
+
+Your algorithm must run in **O(log n)** time (so scanning the whole run of equal values is not allowed).
+
+=== constraints
+- `0 <= nums.length <= 10^5`
+- `-10^9 <= nums[i], target <= 10^9`
+- `nums` is sorted in non-decreasing order
+
+=== hints
+- Two binary searches: the first index with value `>= target`, and the first index with value `> target`.
+
+=== template
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::searchRange);
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        auto v = g.sorted_ints(n, -n / 4 - 3, n / 4 + 3);
+        int t = (!v.empty() && g.coin()) ? g.pick(v) : g.irange(-n / 4 - 5, n / 4 + 5);
+        return lc::lines(v, t);
+    });
+}
+
+=== approach
+Write one binary search, `lowerBound(x)`: the first index with `nums[i] >= x`. Then
+
+- `first = lowerBound(target)`; if it is past the end or `nums[first] != target`, the target is absent;
+- `last = lowerBound(target + 1) - 1` (using `long long` to avoid overflow at `INT_MAX`).
+
+Two O(log n) searches, no scan over the run of equal values.
+
+=== solution
+class Solution {
+    // First index i with nums[i] >= x (nums.size() if none).
+    int lowerBound(const vector<int> &nums, long long x) {
+        int lo = 0, hi = nums.size();
+        while (lo < hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (nums[mid] < x) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
+
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        int first = lowerBound(nums, target);
+        if (first == (int)nums.size() || nums[first] != target) return {-1, -1};
+        int last = lowerBound(nums, (long long)target + 1) - 1;   // end of the run
+        return {first, last};
+    }
+};
+
+=== examples
+[5,7,7,8,8,10]
+8
+> [3,4]
+
+[5,7,7,8,8,10]
+6
+> [-1,-1]
+
+[]
+0
+> [-1,-1]
+
+=== tests
+[1]
+1
+> [0,0]
+
+[2,2]
+2
+> [0,1]
+
+[1,2,3]
+3
+> [2,2]
+
+[2147483647,2147483647]
+2147483647
+> [0,1]
+
+@@@ problem 153 find-minimum-in-rotated-sorted-array
+title: Find Minimum in Rotated Sorted Array
+difficulty: Medium
+topics: Array, Binary Search
+params: nums
+time: O(log n)
+space: O(1)
+bench: n=64..1048576 time=logn space=1
+
+=== description
+An ascending array of **unique** values was rotated between 1 and `n` times; e.g. `[0,1,2,4,5,6,7]` might become `[4,5,6,7,0,1,2]`. Return the **minimum** element.
+
+Your algorithm must run in **O(log n)** time.
+
+=== constraints
+- `1 <= n <= 5000`
+- `-5000 <= nums[i] <= 5000`, all unique
+
+=== hints
+- Compare `nums[mid]` with `nums[hi]`. If `nums[mid] > nums[hi]`, where must the minimum be?
+
+=== template
+class Solution {
+public:
+    int findMin(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::findMin);
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        auto v = g.distinct(n, -3 * n - 10, 3 * n + 10);
+        std::sort(v.begin(), v.end());
+        std::rotate(v.begin(), v.begin() + g.irange(0, n - 1), v.end());
+        return lc::lines(v);
+    });
+}
+
+=== approach
+The minimum is the only point where the order "drops". Compare the middle element with the **last** element of the current range:
+
+- if `nums[mid] > nums[hi]`, the drop (and the minimum) lies to the right of `mid`;
+- otherwise `mid..hi` is sorted, so the minimum is `mid` or to its left.
+
+Shrink until one element remains.
+
+=== solution
+class Solution {
+public:
+    int findMin(vector<int>& nums) {
+        int lo = 0, hi = (int)nums.size() - 1;
+        while (lo < hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (nums[mid] > nums[hi]) lo = mid + 1;   // the drop is to the right of mid
+            else hi = mid;                            // mid..hi sorted: min at mid or left
+        }
+        return nums[lo];
+    }
+};
+
+=== examples
+[3,4,5,1,2]
+> 1
+
+[4,5,6,7,0,1,2]
+> 0
+
+[11,13,15,17]
+> 11
+: Rotated n times, so the array is back in sorted order.
+
+=== tests
+[1]
+> 1
+
+[2,1]
+> 1
+
+[1,2]
+> 1
+
+[5,1,2,3,4]
+> 1
+
+@@@ problem 4 median-of-two-sorted-arrays
+title: Median of Two Sorted Arrays
+difficulty: Hard
+topics: Array, Binary Search, Divide and Conquer
+params: nums1, nums2
+time: O(log(min(m, n)))
+space: O(1)
+bench: n=64..1048576 time=logn space=1 unit=m_=_n
+
+=== description
+Given two sorted arrays `nums1` (size `m`) and `nums2` (size `n`), return the **median** of the combined data. Answers within `10^-5` are accepted.
+
+The overall run time must be **O(log(m + n))**.
+
+=== constraints
+- `0 <= m, n <= 1000`, `1 <= m + n <= 2000`
+- `-10^6 <= values <= 10^6`
+- both arrays are sorted ascending
+
+=== hints
+- Merging is O(m + n): too slow for the requirement.
+- Binary search a **cut** in the smaller array: `i` elements from `nums1` and `half - i` from `nums2` form the left half. The cut is right when both left maxima are `<=` both right minima.
+
+=== template
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::findMedianSortedArrays);
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        int a = n <= 40 ? g.irange(0, n) : n, b = n <= 40 ? g.irange(a == 0 ? 1 : 0, std::max(1, n)) : n;
+        return lc::lines(g.sorted_ints(a, -1000000, 1000000), g.sorted_ints(b, -1000000, 1000000));
+    });
+}
+
+=== approach
+Partition both arrays so that the left parts together hold `half = (m + n + 1) / 2` elements. Binary search `i` (elements taken from the smaller array `A`); then `j = half - i` elements come from `B`.
+
+The partition is correct when `A[i-1] <= B[j]` and `B[j-1] <= A[i]` (with `±∞` beyond the ends). If `A[i-1] > B[j]`, too many elements come from `A`: move left; otherwise move right. At the correct partition the median is `max(left maxima)` for odd totals, or the average of `max(left maxima)` and `min(right minima)` for even totals.
+
+Searching only the smaller array gives O(log(min(m, n))).
+
+=== solution
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        vector<int> &A = nums1.size() <= nums2.size() ? nums1 : nums2;   // A = smaller array
+        vector<int> &B = nums1.size() <= nums2.size() ? nums2 : nums1;
+        int m = A.size(), n = B.size();
+        int half = (m + n + 1) / 2;                   // size of the left half
+        int lo = 0, hi = m;
+        while (lo <= hi) {
+            int i = (lo + hi) / 2;                    // take i from A...
+            int j = half - i;                         // ...and j from B
+            long long aLeft  = i > 0 ? A[i - 1] : LLONG_MIN;
+            long long aRight = i < m ? A[i]     : LLONG_MAX;
+            long long bLeft  = j > 0 ? B[j - 1] : LLONG_MIN;
+            long long bRight = j < n ? B[j]     : LLONG_MAX;
+            if (aLeft > bRight) hi = i - 1;           // too many from A
+            else if (bLeft > aRight) lo = i + 1;      // too few from A
+            else {                                    // valid partition
+                long long leftMax = max(aLeft, bLeft);
+                if ((m + n) % 2 == 1) return leftMax;
+                long long rightMin = min(aRight, bRight);
+                return (leftMax + rightMin) / 2.0;
+            }
+        }
+        return 0.0;   // unreachable for valid input
+    }
+};
+
+=== examples
+[1,3]
+[2]
+> 2.00000
+: The merged array is [1,2,3].
+
+[1,2]
+[3,4]
+> 2.50000
+: The merged array is [1,2,3,4]: (2 + 3) / 2 = 2.5.
+
+=== tests
+[]
+[1]
+> 1.00000
+
+[2]
+[]
+> 2.00000
+
+[1,1]
+[1,1]
+> 1.00000
+
+[1,5,9]
+[2,3,4,10]
+> 4.00000
+
+[-1000000]
+[1000000]
+> 0.00000
