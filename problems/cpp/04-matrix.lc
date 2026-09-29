@@ -1,0 +1,466 @@
+@@ category: Matrix
+
+@@@ problem 36 valid-sudoku
+title: Valid Sudoku
+difficulty: Medium
+topics: Array, Hash Table, Matrix
+params: board
+time: O(1)
+space: O(1)
+bench: off
+
+=== description
+Decide whether a partially filled `9 x 9` Sudoku board is **valid**. Only the filled cells need to follow the rules:
+
+- each row contains the digits `1-9` at most once;
+- each column contains the digits `1-9` at most once;
+- each of the nine `3 x 3` sub-boxes contains the digits `1-9` at most once.
+
+A valid board is not necessarily solvable. Empty cells are `'.'`.
+
+=== constraints
+- `board.length == 9`, `board[i].length == 9`
+- `board[i][j]` is a digit `1-9` or `'.'`
+
+=== hints
+- Keep three sets of "seen" flags: one per row, one per column, one per box.
+- Box index of cell `(r, c)` is `(r / 3) * 3 + c / 3`.
+
+=== template
+class Solution {
+public:
+    bool isValidSudoku(vector<vector<char>>& board) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isValidSudoku);
+    h.gen([](lc::Gen &g, int) {
+        auto digits = g.perm(9, 1);
+        std::vector<std::vector<char>> b(9, std::vector<char>(9, '.'));
+        for (int r = 0; r < 9; ++r)
+            for (int c = 0; c < 9; ++c)
+                if (g.coin(0.45)) b[r][c] = '0' + digits[(r * 3 + r / 3 + c) % 9];
+        int breaks = g.coin(0.5) ? g.irange(1, 2) : 0;
+        for (int i = 0; i < breaks; ++i) b[g.irange(0, 8)][g.irange(0, 8)] = '0' + g.irange(1, 9);
+        return lc::lines(b);
+    });
+}
+
+=== approach
+Scan every filled cell once and record its digit in three bit masks: one for its row, one for its column and one for its 3×3 box (`box = (r/3)*3 + c/3`). If the digit's bit is already set in any of them, the board is invalid.
+
+The board is always 9×9, so this is constant time and space.
+
+=== solution
+class Solution {
+public:
+    bool isValidSudoku(vector<vector<char>>& board) {
+        // Bit d of rows[r] is set when digit d already appears in row r, etc.
+        int rows[9] = {0}, cols[9] = {0}, boxes[9] = {0};
+        for (int r = 0; r < 9; ++r) {
+            for (int c = 0; c < 9; ++c) {
+                if (board[r][c] == '.') continue;
+                int bit = 1 << (board[r][c] - '0');
+                int b = (r / 3) * 3 + c / 3;
+                if ((rows[r] & bit) || (cols[c] & bit) || (boxes[b] & bit)) return false;
+                rows[r] |= bit;
+                cols[c] |= bit;
+                boxes[b] |= bit;
+            }
+        }
+        return true;
+    }
+};
+
+=== examples
+[["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
+> true
+
+[["8","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
+> false
+: The top-left 3x3 box contains two 8s.
+
+=== tests
+[[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."]]
+> ?
+
+[["1",".",".",".",".",".",".",".","1"],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."]]
+> ?
+
+[[".",".",".",".","5",".",".","1","."],[".","4",".","3",".",".",".",".","."],[".",".",".",".",".","3",".",".","1"],["8",".",".",".",".",".",".","2","."],[".",".","2",".","7",".",".",".","."],[".","1","5",".",".",".",".",".","."],[".",".",".",".",".","2",".",".","."],[".","2",".","9",".",".",".",".","."],[".",".","4",".",".",".",".",".","."]]
+> ?
+
+[["9",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],[".",".",".",".",".",".",".",".","."],["9",".",".",".",".",".",".",".","."]]
+> ?
+
+@@@ problem 54 spiral-matrix
+title: Spiral Matrix
+difficulty: Medium
+topics: Array, Matrix, Simulation
+params: matrix
+time: O(m · n)
+space: O(1) extra (output excluded)
+bench: n=64..1048576 time=n space=n unit=m_×_n_(number_of_cells)
+
+=== description
+Given an `m x n` matrix, return all of its elements in **spiral order**: go right along the top row, down the right column, left along the bottom row, up the left column, and continue inward.
+
+=== constraints
+- `1 <= m, n <= 10`
+- `-100 <= matrix[i][j] <= 100`
+
+=== hints
+- Keep four boundaries: `top`, `bottom`, `left`, `right`.
+- After walking one side, move that boundary inward. Check the boundaries again before walking the bottom row and the left column.
+
+=== template
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::spiralOrder);
+    h.gen([](lc::Gen &g, int n) {
+        int r = std::max(1, (int)std::sqrt((double)n) + g.irange(-2, 2));
+        int c = std::max(1, n / r);
+        std::vector<std::vector<int>> m(r);
+        for (auto &row : m) row = g.ints(c, -100, 100);
+        return lc::lines(m);
+    });
+}
+
+=== approach
+Maintain the boundaries of the unvisited rectangle: `top`, `bottom`, `left`, `right`. Walk the top row left→right and increment `top`; walk the right column top→bottom and decrement `right`; then, **if rows remain**, walk the bottom row right→left and decrement `bottom`; **if columns remain**, walk the left column bottom→top and increment `left`. The two checks matter for single rows/columns in the middle. Every cell is visited exactly once.
+
+=== solution
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector<int> out;
+        int top = 0, bottom = (int)matrix.size() - 1;
+        int left = 0, right = (int)matrix[0].size() - 1;
+        while (top <= bottom && left <= right) {
+            for (int c = left; c <= right; ++c) out.push_back(matrix[top][c]);       // →
+            ++top;
+            for (int r = top; r <= bottom; ++r) out.push_back(matrix[r][right]);     // ↓
+            --right;
+            if (top <= bottom) {                                                    // ← (if a row is left)
+                for (int c = right; c >= left; --c) out.push_back(matrix[bottom][c]);
+                --bottom;
+            }
+            if (left <= right) {                                                    // ↑ (if a column is left)
+                for (int r = bottom; r >= top; --r) out.push_back(matrix[r][left]);
+                ++left;
+            }
+        }
+        return out;
+    }
+};
+
+=== examples
+[[1,2,3],[4,5,6],[7,8,9]]
+> [1,2,3,6,9,8,7,4,5]
+
+[[1,2,3,4],[5,6,7,8],[9,10,11,12]]
+> [1,2,3,4,8,12,11,10,9,5,6,7]
+
+=== tests
+[[1]]
+> ?
+
+[[1,2,3]]
+> ?
+
+[[1],[2],[3]]
+> ?
+
+[[1,2],[3,4],[5,6],[7,8]]
+> ?
+
+@@@ problem 48 rotate-image
+title: Rotate Image
+difficulty: Medium
+topics: Array, Math, Matrix
+params: matrix
+time: O(n²)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=number_of_cells
+
+=== description
+Rotate the `n x n` matrix by **90 degrees clockwise**, **in place**. Do not allocate another 2D matrix.
+
+=== constraints
+- `n == matrix.length == matrix[i].length`
+- `1 <= n <= 20`
+- `-1000 <= matrix[i][j] <= 1000`
+
+=== hints
+- A clockwise rotation = transpose, then reverse every row.
+- Alternatively rotate four cells at a time, layer by layer.
+
+=== template
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::rotate).print_arg(0);
+    h.gen([](lc::Gen &g, int n) {
+        int side = std::max(1, (int)std::lround(std::sqrt((double)n)));
+        std::vector<std::vector<int>> m(side);
+        for (auto &row : m) row = g.ints(side, -1000, 1000);
+        return lc::lines(m);
+    });
+}
+
+=== approach
+Rotating clockwise by 90° maps cell `(i, j)` to `(j, n-1-i)`. That map is the composition of two simple in-place operations:
+
+1. **transpose**: swap `matrix[i][j]` with `matrix[j][i]` for `j > i`;
+2. **reverse each row**.
+
+Both touch every cell a constant number of times and need no extra matrix. (For an n×n matrix this is O(n²) = O(number of cells).)
+
+=== solution
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        int n = matrix.size();
+        // 1) transpose across the main diagonal
+        for (int i = 0; i < n; ++i)
+            for (int j = i + 1; j < n; ++j)
+                swap(matrix[i][j], matrix[j][i]);
+        // 2) mirror each row horizontally
+        for (auto &row : matrix) reverse(row.begin(), row.end());
+    }
+};
+
+=== examples
+[[1,2,3],[4,5,6],[7,8,9]]
+> [[7,4,1],[8,5,2],[9,6,3]]
+
+[[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]]
+> [[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]]
+
+=== tests
+[[1]]
+> ?
+
+[[1,2],[3,4]]
+> ?
+
+[[1,2,3,4,5],[6,7,8,9,10],[11,12,13,14,15],[16,17,18,19,20],[21,22,23,24,25]]
+> ?
+
+@@@ problem 73 set-matrix-zeroes
+title: Set Matrix Zeroes
+difficulty: Medium
+topics: Array, Hash Table, Matrix
+params: matrix
+time: O(m · n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=number_of_cells
+
+=== description
+Given an `m x n` integer matrix, if an element is `0`, set its **entire row and column** to `0`. Do it **in place**.
+
+Follow-up: an O(m·n) extra-space solution is easy and O(m + n) is better. Can you use only constant extra space?
+
+=== constraints
+- `1 <= m, n <= 200`
+- `-2^31 <= matrix[i][j] <= 2^31 - 1`
+
+=== hints
+- First record which rows and columns must be zeroed, then zero them.
+- To avoid extra arrays, use the first row and first column as the markers; remember separately whether the first column itself must be zeroed.
+
+=== template
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::setZeroes).print_arg(0);
+    h.gen([](lc::Gen &g, int n) {
+        int r = std::max(1, (int)std::sqrt((double)n) + g.irange(-2, 2));
+        int c = std::max(1, n / r);
+        std::vector<std::vector<int>> m(r);
+        for (auto &row : m) row = g.ints(c, -5, 9);
+        for (auto &row : m) for (auto &x : row) if (x == 0 && g.coin(0.9)) x = 7;
+        int zeros = g.irange(0, std::max(1, (int)std::sqrt((double)n) / 4));
+        for (int i = 0; i < zeros; ++i) m[g.irange(0, r - 1)][g.irange(0, c - 1)] = 0;
+        return lc::lines(m);
+    });
+}
+
+=== approach
+Use the **first row and first column as marker storage**: if `matrix[i][j] == 0`, set `matrix[i][0] = 0` and `matrix[0][j] = 0`. Because `matrix[0][0]` would be shared by row 0 and column 0, keep a separate flag `firstCol` for column 0.
+
+Then zero every inner cell whose row or column is marked, and finally handle row 0 (using `matrix[0][0]`) and column 0 (using `firstCol`). The order matters: the markers must be read before they are overwritten.
+
+=== solution
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        int m = matrix.size(), n = matrix[0].size();
+        bool firstCol = false;          // does column 0 need zeroing?
+
+        // 1) Record markers in row 0 / column 0.
+        for (int i = 0; i < m; ++i) {
+            if (matrix[i][0] == 0) firstCol = true;
+            for (int j = 1; j < n; ++j) {
+                if (matrix[i][j] == 0) {
+                    matrix[i][0] = 0;   // mark row i
+                    matrix[0][j] = 0;   // mark column j
+                }
+            }
+        }
+        // 2) Zero inner cells using the markers.
+        for (int i = 1; i < m; ++i)
+            for (int j = 1; j < n; ++j)
+                if (matrix[i][0] == 0 || matrix[0][j] == 0) matrix[i][j] = 0;
+        // 3) Row 0 (marker is matrix[0][0]) and column 0 (marker is firstCol).
+        if (matrix[0][0] == 0)
+            for (int j = 0; j < n; ++j) matrix[0][j] = 0;
+        if (firstCol)
+            for (int i = 0; i < m; ++i) matrix[i][0] = 0;
+    }
+};
+
+=== examples
+[[1,1,1],[1,0,1],[1,1,1]]
+> [[1,0,1],[0,0,0],[1,0,1]]
+
+[[0,1,2,0],[3,4,5,2],[1,3,1,5]]
+> [[0,0,0,0],[0,4,5,0],[0,3,1,0]]
+
+=== tests
+[[0]]
+> ?
+
+[[1]]
+> ?
+
+[[1,0]]
+> ?
+
+[[1],[0],[3]]
+> ?
+
+[[1,2,3,4],[5,0,7,8],[0,10,11,12],[13,14,15,0]]
+> ?
+
+@@@ problem 289 game-of-life
+title: Game of Life
+difficulty: Medium
+topics: Array, Matrix, Simulation
+params: board
+time: O(m · n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=number_of_cells
+
+=== description
+Conway's **Game of Life** is played on an `m x n` grid of cells that are live (`1`) or dead (`0`). Each cell looks at its eight neighbours:
+
+1. a live cell with fewer than two live neighbours dies (under-population);
+2. a live cell with two or three live neighbours lives on;
+3. a live cell with more than three live neighbours dies (over-population);
+4. a dead cell with exactly three live neighbours becomes alive (reproduction).
+
+All cells update **simultaneously**. Update `board` in place to the next state.
+
+=== constraints
+- `1 <= m, n <= 25`
+- `board[i][j]` is `0` or `1`
+
+=== hints
+- The problem: once you overwrite a cell, its neighbours can't see its old value anymore.
+- Encode both states in one int: bit 0 = current state, bit 1 = next state. Shift everything right at the end.
+
+=== template
+class Solution {
+public:
+    void gameOfLife(vector<vector<int>>& board) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::gameOfLife).print_arg(0);
+    h.gen([](lc::Gen &g, int n) {
+        int r = std::max(1, (int)std::sqrt((double)n) + g.irange(-2, 2));
+        int c = std::max(1, n / r);
+        std::vector<std::vector<int>> m(r);
+        for (auto &row : m) row = g.ints(c, 0, 1);
+        return lc::lines(m);
+    });
+}
+
+=== approach
+Store two generations in each cell using bits: **bit 0** holds the current state and **bit 1** the next state. While counting neighbours, read only bit 0 (`cell & 1`), so already-updated cells still reveal their old value. Write the new state into bit 1. Finally shift every cell right by one to make the next state current.
+
+No copy of the board is needed.
+
+=== solution
+class Solution {
+public:
+    void gameOfLife(vector<vector<int>>& board) {
+        int m = board.size(), n = board[0].size();
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                int live = 0;                               // live neighbours (current gen)
+                for (int di = -1; di <= 1; ++di)
+                    for (int dj = -1; dj <= 1; ++dj) {
+                        if (di == 0 && dj == 0) continue;
+                        int r = i + di, c = j + dj;
+                        if (r >= 0 && r < m && c >= 0 && c < n) live += board[r][c] & 1;
+                    }
+                bool alive = board[i][j] & 1;
+                // Next state: survives with 2-3 neighbours, is born with exactly 3.
+                if ((alive && (live == 2 || live == 3)) || (!alive && live == 3))
+                    board[i][j] |= 2;                       // set bit 1 = next state
+            }
+        }
+        for (auto &row : board)
+            for (int &cell : row) cell >>= 1;               // promote next state
+    }
+};
+
+=== examples
+[[0,1,0],[0,0,1],[1,1,1],[0,0,0]]
+> [[0,0,0],[1,0,1],[0,1,1],[0,1,0]]
+
+[[1,1],[1,0]]
+> [[1,1],[1,1]]
+
+=== tests
+[[1]]
+> ?
+
+[[0]]
+> ?
+
+[[1,1,1]]
+> ?
+
+[[0,1,0],[0,1,0],[0,1,0]]
+> ?
+
+[[1,1,0,0],[1,1,0,0],[0,0,1,1],[0,0,1,1]]
+> ?

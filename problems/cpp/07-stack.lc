@@ -1,0 +1,576 @@
+@@ category: Stack
+
+@@@ problem 20 valid-parentheses
+title: Valid Parentheses
+difficulty: Easy
+topics: String, Stack
+params: s
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=s.length
+
+=== description
+Given a string `s` containing only the characters `'('`, `')'`, `'{'`, `'}'`, `'['` and `']'`, decide whether it is **valid**:
+
+1. every opening bracket is closed by a bracket of the same type;
+2. brackets are closed in the correct order;
+3. every closing bracket has a matching opening bracket.
+
+=== constraints
+- `1 <= s.length <= 10^4`
+- `s` consists of parentheses only: `()[]{}`
+
+=== hints
+- The most recently opened bracket must be closed first. Which data structure gives you "most recent first"?
+
+=== template
+class Solution {
+public:
+    bool isValid(string s) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isValid);
+    h.gen([](lc::Gen &g, int n) {
+        const std::string open = "([{", close = ")]}";
+        std::string s, st;
+        int half = std::max(1, n / 2);
+        while ((int)s.size() < 2 * half) {
+            int remaining = 2 * half - (int)s.size();
+            if (!st.empty() && ((int)st.size() >= remaining || g.coin(0.5))) {
+                s += close[open.find(st.back())];
+                st.pop_back();
+            } else {
+                char c = open[g.irange(0, 2)];
+                s += c;
+                st += c;
+            }
+        }
+        if (g.coin(0.4)) s[g.irange(0, (int)s.size() - 1)] = "()[]{}"[g.irange(0, 5)];
+        if (g.coin(0.1)) s.pop_back();
+        return lc::lines(s);
+    });
+}
+
+=== approach
+Use a **stack** of open brackets. Push every opening bracket. For a closing bracket, the stack top must be its matching opener; pop it, otherwise the string is invalid. At the end the stack must be empty (no unclosed brackets).
+
+=== solution
+class Solution {
+public:
+    bool isValid(string s) {
+        string stack;                                   // pending opening brackets
+        for (char c : s) {
+            if (c == '(' || c == '[' || c == '{') {
+                stack.push_back(c);
+            } else {
+                char want = c == ')' ? '(' : c == ']' ? '[' : '{';
+                if (stack.empty() || stack.back() != want) return false;
+                stack.pop_back();                       // matched the latest opener
+            }
+        }
+        return stack.empty();                           // nothing left unclosed
+    }
+};
+
+=== examples
+"()"
+> true
+
+"()[]{}"
+> true
+
+"(]"
+> false
+
+"([])"
+> true
+
+=== tests
+"["
+> ?
+
+"]"
+> ?
+
+"([)]"
+> ?
+
+"{[]}"
+> ?
+
+"(("
+> ?
+
+@@@ problem 71 simplify-path
+title: Simplify Path
+difficulty: Medium
+topics: String, Stack
+params: path
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=path.length
+
+=== description
+You are given an **absolute** Unix-style path (it starts with `/`). Convert it to its **canonical** form:
+
+- `.` means the current directory and `..` the parent directory (the parent of `/` is `/` itself);
+- several consecutive slashes count as a single slash;
+- any other name, including names made of dots such as `...`, is a normal directory name.
+
+The canonical path starts with a single `/`, separates directories with a single `/`, has no trailing `/` (unless it is the root), and contains no `.` or `..` components.
+
+=== constraints
+- `1 <= path.length <= 3000`
+- `path` contains English letters, digits, `.`, `/` and `_`
+- `path` is a valid absolute Unix path
+
+=== hints
+- Split the path on `/` and ignore empty parts.
+- Process parts with a stack: a name is pushed, `..` pops (if possible), `.` does nothing.
+
+=== template
+class Solution {
+public:
+    string simplifyPath(string path) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::simplifyPath);
+    h.gen([](lc::Gen &g, int n) {
+        std::vector<std::string> parts = {"a", "bc", "..", ".", "...", "x_y", "home", "..", "d1"};
+        std::string p;
+        while ((int)p.size() < std::max(1, n)) p += std::string(g.irange(1, 2), '/') + g.pick(parts);
+        if (g.coin(0.3)) p += "/";
+        return lc::lines(p);
+    });
+}
+
+=== approach
+Split the path on `/` and process each non-empty component with a **stack** of directory names:
+
+- `.` is ignored;
+- `..` pops the top directory if there is one;
+- anything else is pushed.
+
+Finally join the stack as `"/" + d1 + "/" + d2 ...`, or `"/"` if the stack is empty.
+
+=== solution
+class Solution {
+public:
+    string simplifyPath(string path) {
+        vector<string> dirs;                    // stack of directory names
+        int n = path.size();
+        for (int i = 0; i < n;) {
+            while (i < n && path[i] == '/') ++i;             // skip slashes
+            int j = i;
+            while (j < n && path[j] != '/') ++j;             // [i, j) is a component
+            string part = path.substr(i, j - i);
+            i = j;
+            if (part.empty() || part == ".") continue;
+            if (part == "..") {
+                if (!dirs.empty()) dirs.pop_back();          // go to parent
+            } else {
+                dirs.push_back(part);                        // enter directory
+            }
+        }
+        if (dirs.empty()) return "/";
+        string out;
+        for (auto &d : dirs) out += "/" + d;
+        return out;
+    }
+};
+
+=== examples
+"/home/"
+> "/home"
+
+"/home//foo/"
+> "/home/foo"
+
+"/home/user/Documents/../Pictures"
+> "/home/user/Pictures"
+
+"/../"
+> "/"
+: The parent of the root is the root.
+
+"/.../a/../b/c/../d/./"
+> "/.../b/d"
+: "..." is an ordinary directory name.
+
+=== tests
+"/"
+> ?
+
+"/a/./b/../../c/"
+> ?
+
+"/a//b////c/d//././/.."
+> ?
+
+"/..hidden/.."
+> ?
+
+@@@ problem 155 min-stack
+title: Min Stack
+difficulty: Medium
+topics: Stack, Design
+params: operations, arguments
+time: O(1) per operation
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=number_of_operations
+
+=== description
+Design a stack that supports push, pop, top, and retrieving the **minimum** element, all in **O(1)** time.
+
+- `MinStack()` initializes the stack.
+- `void push(int val)` pushes `val`.
+- `void pop()` removes the top element.
+- `int top()` returns the top element.
+- `int getMin()` returns the minimum element in the stack.
+
+`pop`, `top` and `getMin` are only called on non-empty stacks.
+
+=== constraints
+- `-2^31 <= val <= 2^31 - 1`
+- at most `3 * 10^4` calls in total
+
+=== hints
+- Store, next to each element, the minimum of the stack *at the time it was pushed*.
+
+=== template
+class MinStack {
+public:
+    MinStack() {
+
+    }
+
+    void push(int val) {
+
+    }
+
+    void pop() {
+
+    }
+
+    int top() {
+
+    }
+
+    int getMin() {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.design<MinStack>()
+        .method("push", &MinStack::push)
+        .method("pop", &MinStack::pop)
+        .method("top", &MinStack::top)
+        .method("getMin", &MinStack::getMin);
+    h.gen([](lc::Gen &g, int n) {
+        lc::Ops ops;
+        ops.add("MinStack");
+        int size = 0;
+        for (int i = 0; i < n; ++i) {
+            int r = g.irange(0, 9);
+            if (size == 0 || r < 4) { ops.add("push", g.irange(-1000, 1000)); ++size; }
+            else if (r < 6) { ops.add("pop"); --size; }
+            else if (r < 8) ops.add("getMin");
+            else ops.add("top");
+        }
+        return ops.lines();
+    });
+}
+
+=== approach
+Store pairs `(value, minSoFar)` on a single stack, where `minSoFar` is the minimum of this element and everything below it. Pushing computes `min(val, previous minSoFar)`; popping removes the pair, automatically restoring the previous minimum. `top` and `getMin` just read the top pair.
+
+=== solution
+class MinStack {
+    // Each entry remembers the minimum of the stack from the bottom up to itself.
+    vector<pair<int, int>> st;   // (value, minimum so far)
+
+public:
+    MinStack() {}
+
+    void push(int val) {
+        int m = st.empty() ? val : min(val, st.back().second);
+        st.push_back({val, m});
+    }
+
+    void pop() { st.pop_back(); }
+
+    int top() { return st.back().first; }
+
+    int getMin() { return st.back().second; }
+};
+
+=== examples
+["MinStack","push","push","push","getMin","pop","top","getMin"]
+[[],[-2],[0],[-3],[],[],[],[]]
+> [null,null,null,null,-3,null,0,-2]
+
+=== tests
+["MinStack","push","getMin","top"]
+[[],[5],[],[]]
+> ?
+
+["MinStack","push","push","push","getMin","pop","getMin","pop","getMin"]
+[[],[1],[1],[2],[],[],[],[],[]]
+> ?
+
+["MinStack","push","push","getMin","pop","push","getMin"]
+[[],[2147483647],[-2147483648],[],[],[7],[]]
+> ?
+
+@@@ problem 150 evaluate-reverse-polish-notation
+title: Evaluate Reverse Polish Notation
+difficulty: Medium
+topics: Array, Math, Stack
+params: tokens
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=number_of_tokens
+
+=== description
+Evaluate an arithmetic expression given in **Reverse Polish Notation** (postfix), as an array of string `tokens`.
+
+- The operators are `+`, `-`, `*` and `/`; operands are integers.
+- Division between two integers **truncates toward zero**.
+- There is no division by zero, the expression is always valid, and every intermediate result fits in a 32-bit integer.
+
+=== constraints
+- `1 <= tokens.length <= 10^4`
+- each token is an operator or an integer in `[-200, 200]`
+
+=== hints
+- Push numbers on a stack. An operator pops two operands (careful with the order!) and pushes the result.
+
+=== template
+class Solution {
+public:
+    int evalRPN(vector<string>& tokens) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::evalRPN);
+    h.gen([](lc::Gen &g, int n) {
+        std::vector<std::string> tok;
+        std::vector<long long> st;
+        int numbers = std::max(1, (n + 1) / 2);
+        int pushed = 0;
+        while (pushed < numbers || st.size() > 1) {
+            bool canOp = st.size() >= 2;
+            if (pushed < numbers && (!canOp || g.coin(0.55))) {
+                long long v = g.irange(-200, 200);
+                tok.push_back(std::to_string(v));
+                st.push_back(v);
+                ++pushed;
+                continue;
+            }
+            long long b = st.back(); st.pop_back();
+            long long a = st.back(); st.pop_back();
+            std::vector<std::pair<char, long long>> ok;
+            if (std::llabs(a + b) <= 100000000) ok.push_back({'+', a + b});
+            if (std::llabs(a - b) <= 100000000) ok.push_back({'-', a - b});
+            if (std::llabs(a * b) <= 100000000) ok.push_back({'*', a * b});
+            if (b != 0) ok.push_back({'/', a / b});
+            if (ok.empty()) ok.push_back({'*', 0}), b = 0;
+            auto pick = g.pick(ok);
+            tok.push_back(std::string(1, pick.first));
+            st.push_back(pick.second);
+        }
+        return lc::lines(tok);
+    });
+}
+
+=== approach
+Scan the tokens with a **stack** of integers. Numbers are pushed. For an operator, pop `b` (the right operand, pushed last) and then `a` (the left operand), compute `a op b` and push the result. At the end, the single remaining value is the answer. C++ integer division already truncates toward zero.
+
+=== solution
+class Solution {
+public:
+    int evalRPN(vector<string>& tokens) {
+        vector<long long> st;
+        for (auto &t : tokens) {
+            if (t.size() == 1 && string("+-*/").find(t[0]) != string::npos) {
+                long long b = st.back(); st.pop_back();   // right operand
+                long long a = st.back(); st.pop_back();   // left operand
+                switch (t[0]) {
+                    case '+': st.push_back(a + b); break;
+                    case '-': st.push_back(a - b); break;
+                    case '*': st.push_back(a * b); break;
+                    default:  st.push_back(a / b); break; // truncates toward zero
+                }
+            } else {
+                st.push_back(stoll(t));                   // operand (may be negative)
+            }
+        }
+        return (int)st.back();
+    }
+};
+
+=== examples
+["2","1","+","3","*"]
+> 9
+: ((2 + 1) * 3) = 9
+
+["4","13","5","/","+"]
+> 6
+: (4 + (13 / 5)) = 6
+
+["10","6","9","3","+","-11","*","/","*","17","+","5","+"]
+> 22
+
+=== tests
+["18"]
+> ?
+
+["-7","2","/"]
+> ?
+
+["3","-4","-"]
+> ?
+
+["4","-2","/","2","-3","-","-"]
+> ?
+
+@@@ problem 224 basic-calculator
+title: Basic Calculator
+difficulty: Hard
+topics: Math, String, Stack, Recursion
+params: s
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=s.length
+
+=== description
+Given a string `s` representing a valid expression, evaluate it and return the result. You may **not** use built-in evaluation functions like `eval()`.
+
+The expression contains non-negative integers, `+`, `-`, parentheses `(` `)` and spaces.
+
+- `-` may be **unary** (e.g. `"-1"` or `"-(2 + 3)"`); `+` is never unary.
+- Every number and every intermediate result fits in a signed 32-bit integer.
+
+=== constraints
+- `1 <= s.length <= 3 * 10^5`
+- `s` consists of digits, `'+'`, `'-'`, `'('`, `')'` and `' '`
+- `s` is a valid expression
+
+=== hints
+- Without parentheses, keep a running `result` and the `sign` of the next number.
+- On `(`, save the current `result` and `sign` on a stack and start fresh; on `)`, combine the inner result with the saved state.
+
+=== template
+class Solution {
+public:
+    int calculate(string s) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::calculate);
+    h.gen([](lc::Gen &g, int n) {
+        // random expression with nested parentheses and unary minus
+        std::string s;
+        int depth = 0;
+        bool expectOperand = true;
+        while ((int)s.size() < std::max(3, n) || depth > 0 || expectOperand) {
+            bool finishing = (int)s.size() >= std::max(3, n);
+            if (expectOperand) {
+                if (g.coin(0.15) && (s.empty() || s.back() == '(')) s += "-";   // unary minus
+                if (!finishing && depth < 30 && g.coin(0.25)) { s += "("; ++depth; continue; }
+                s += std::to_string(g.irange(0, 1000));
+                expectOperand = false;
+            } else if (depth > 0 && (finishing || g.coin(0.2))) {
+                s += ")";
+                --depth;
+            } else {
+                s += g.coin(0.5) ? " + " : (g.coin(0.5) ? "-" : " - ");
+                expectOperand = true;
+            }
+        }
+        return lc::lines(s);
+    });
+}
+
+=== approach
+Process the string left to right keeping:
+
+- `result`: the value of the current parenthesis level so far;
+- `sign`: `+1` or `-1` for the next number;
+- a **stack** of saved `(result, sign)` pairs for enclosing levels.
+
+Digits build a number; when it ends, add `sign * number` to `result`. `+`/`-` set the sign. On `(`, push the current `result` and `sign`, then reset both. On `)`, the inner value is `result`; pop the saved pair and set `result = savedResult + savedSign * result`. Unary minus falls out naturally: `-(…)` is just `0 - (…)`.
+
+=== solution
+class Solution {
+public:
+    int calculate(string s) {
+        long long result = 0, number = 0;
+        int sign = 1;
+        vector<pair<long long, int>> st;    // saved (result, sign) for outer levels
+        for (char c : s) {
+            if (isdigit(c)) {
+                number = number * 10 + (c - '0');
+            } else if (c == '+' || c == '-') {
+                result += sign * number;    // finish the previous number
+                number = 0;
+                sign = c == '+' ? 1 : -1;
+            } else if (c == '(') {
+                st.push_back({result, sign});   // remember the outer level
+                result = 0;
+                sign = 1;
+            } else if (c == ')') {
+                result += sign * number;    // finish the inner expression
+                number = 0;
+                auto [outer, outerSign] = st.back();
+                st.pop_back();
+                result = outer + outerSign * result;
+                sign = 1;
+            }
+            // spaces are ignored
+        }
+        return (int)(result + sign * number);
+    }
+};
+
+=== examples
+"1 + 1"
+> 2
+
+" 2-1 + 2 "
+> 3
+
+"(1+(4+5+2)-3)+(6+8)"
+> 23
+
+=== tests
+"-1"
+> ?
+
+"-(2 + 3)"
+> ?
+
+"1-(     -2)"
+> ?
+
+"2147483647"
+> ?
+
+"(((7)))-((1-2)-(3-4))"
+> ?

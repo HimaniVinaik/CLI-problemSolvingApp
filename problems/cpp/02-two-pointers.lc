@@ -1,0 +1,479 @@
+@@ category: Two Pointers
+
+@@@ problem 125 valid-palindrome
+title: Valid Palindrome
+difficulty: Easy
+topics: Two Pointers, String
+params: s
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=s.length
+
+=== description
+A phrase is a **palindrome** if, after converting all uppercase letters to lowercase and removing every non-alphanumeric character, it reads the same forward and backward.
+
+Return `true` if the string `s` is a palindrome, `false` otherwise.
+
+=== constraints
+- `1 <= s.length <= 2 * 10^5`
+- `s` consists of printable ASCII characters
+
+=== hints
+- You don't need to build the cleaned string: use one pointer from each end.
+- Skip characters for which `isalnum` is false, and compare with `tolower`.
+
+=== template
+class Solution {
+public:
+    bool isPalindrome(string s) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isPalindrome);
+    h.gen([](lc::Gen &g, int n) {
+        const std::string pool = "abcAB01 ,.:!";
+        std::string half = g.str(n / 2, pool);
+        std::string s = half;
+        for (int i = (int)half.size() - 1; i >= 0; --i) {
+            char c = half[i];
+            s += g.coin(0.5) && isalpha((unsigned char)c) ? (char)(isupper((unsigned char)c) ? tolower(c) : toupper(c)) : c;
+        }
+        if (n % 2) s.insert(s.begin() + n / 2, pool[g.irange(0, (int)pool.size() - 1)]);
+        if (g.coin(0.4) && !s.empty()) s[g.irange(0, (int)s.size() - 1)] = "xyz9"[g.irange(0, 3)];
+        return lc::lines(s);
+    });
+}
+
+=== approach
+Use **two pointers** moving toward each other. Each pointer skips characters that are not letters or digits. When both rest on alphanumeric characters, compare them case-insensitively; any mismatch means it is not a palindrome. If the pointers meet, it is.
+
+No cleaned copy of the string is built, so only O(1) extra memory is used.
+
+=== solution
+class Solution {
+public:
+    bool isPalindrome(string s) {
+        int i = 0, j = (int)s.size() - 1;
+        while (i < j) {
+            // Skip anything that is not a letter or digit.
+            if (!isalnum((unsigned char)s[i])) { ++i; continue; }
+            if (!isalnum((unsigned char)s[j])) { --j; continue; }
+            if (tolower((unsigned char)s[i]) != tolower((unsigned char)s[j])) return false;
+            ++i, --j;
+        }
+        return true;
+    }
+};
+
+=== examples
+"A man, a plan, a canal: Panama"
+> true
+: After cleaning: "amanaplanacanalpanama", a palindrome.
+
+"race a car"
+> false
+: "raceacar" is not a palindrome.
+
+" "
+> true
+: The cleaned string is empty, which reads the same both ways.
+
+=== tests
+"a"
+> ?
+
+"ab"
+> ?
+
+"0P"
+> ?
+
+".,"
+> ?
+
+"No 'x' in Nixon"
+> ?
+
+@@@ problem 392 is-subsequence
+title: Is Subsequence
+difficulty: Easy
+topics: Two Pointers, String, Dynamic Programming
+params: s, t
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=t.length
+
+=== description
+Given strings `s` and `t`, return `true` if `s` is a **subsequence** of `t`: it can be obtained from `t` by deleting some (possibly zero) characters without changing the order of the rest.
+
+For example `"ace"` is a subsequence of `"abcde"` but `"aec"` is not.
+
+Follow-up: if there are many strings `s` to check against the same `t`, how would you speed up the checks?
+
+=== constraints
+- `0 <= s.length <= 100`
+- `0 <= t.length <= 10^4`
+- both strings contain only lowercase English letters
+
+=== hints
+- Walk through `t` once, advancing a pointer into `s` whenever the characters match.
+- Follow-up: store, for each letter, the sorted positions where it appears in `t`; then binary search.
+
+=== template
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isSubsequence);
+    h.gen([](lc::Gen &g, int n) {
+        std::string t = g.lower(n, 4), s;
+        int m = std::min(n, std::max(0, g.irange(0, std::max(1, n / 4))));
+        if (g.coin(0.6)) {  // a real subsequence
+            for (int i = 0; i < n && (int)s.size() < m; ++i) if (g.coin((double)m / std::max(1, n))) s += t[i];
+            if (g.coin(0.3) && !s.empty()) s[g.irange(0, (int)s.size() - 1)] = 'a' + g.irange(0, 3);
+        } else {
+            s = g.lower(g.irange(0, std::min(n, 12)), 4);
+        }
+        return lc::lines(s, t);
+    });
+}
+
+=== approach
+**Greedy two pointers.** Scan `t` from left to right with index `j` while `i` points at the next character of `s` we still need. Whenever `t[j] == s[i]`, advance `i`. Matching as early as possible is always safe because it leaves the most room for the remaining characters. `s` is a subsequence iff `i` reaches `s.size()`.
+
+=== solution
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        size_t i = 0;                           // next character of s to find
+        for (size_t j = 0; j < t.size() && i < s.size(); ++j) {
+            if (t[j] == s[i]) ++i;              // matched: move on in s
+        }
+        return i == s.size();
+    }
+};
+
+=== examples
+"abc"
+"ahbgdc"
+> true
+
+"axc"
+"ahbgdc"
+> false
+
+=== tests
+""
+""
+> ?
+
+""
+"abc"
+> ?
+
+"a"
+""
+> ?
+
+"aaa"
+"aa"
+> ?
+
+"bb"
+"abcb"
+> ?
+
+@@@ problem 167 two-sum-ii-input-array-is-sorted
+title: Two Sum II - Input Array Is Sorted
+difficulty: Medium
+topics: Array, Two Pointers, Binary Search
+params: numbers, target
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1
+
+=== description
+`numbers` is a **1-indexed** array sorted in non-decreasing order. Find the two numbers that add up to `target` and return their indices `[index1, index2]` with `1 <= index1 < index2`.
+
+There is exactly one solution, and you may not use the same element twice. Use only constant extra space.
+
+=== constraints
+- `2 <= numbers.length <= 3 * 10^4`
+- `-1000 <= numbers[i] <= 1000`
+- `numbers` is sorted in non-decreasing order
+- exactly one solution exists
+
+=== hints
+- Start with the smallest and the largest number. If their sum is too big, which pointer should move?
+
+=== template
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& numbers, int target) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::twoSum);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 2);
+        // All values are multiples of 4 except one value = 1 (mod 4) and one
+        // value = 2 (mod 4): the only pair summing to 3 (mod 4) is unique.
+        long long R = std::max(40, 4 * n);
+        std::vector<int> v(n);
+        for (auto &x : v) x = 4 * g.irange(-R / 4, R / 4);
+        int i = g.irange(0, n - 1), j = g.irange(0, n - 2);
+        if (j >= i) ++j;
+        v[i] += 1;
+        v[j] += 2;
+        int target = v[i] + v[j];
+        std::sort(v.begin(), v.end());
+        return lc::lines(v, target);
+    });
+}
+
+=== approach
+Because the array is sorted, put `l` at the start and `r` at the end:
+
+- if `numbers[l] + numbers[r]` equals the target, we're done;
+- if the sum is too **small**, the only way to increase it is `l++`;
+- if the sum is too **large**, decrease it with `r--`.
+
+Each step discards one element that cannot be part of the answer, so the scan is O(n) with O(1) memory.
+
+=== solution
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& numbers, int target) {
+        int l = 0, r = (int)numbers.size() - 1;
+        while (l < r) {
+            int sum = numbers[l] + numbers[r];
+            if (sum == target) return {l + 1, r + 1};   // 1-indexed answer
+            if (sum < target) ++l;                       // need a bigger sum
+            else --r;                                    // need a smaller sum
+        }
+        return {};  // unreachable: a solution is guaranteed
+    }
+};
+
+=== examples
+[2,7,11,15]
+9
+> [1,2]
+: 2 + 7 = 9, at positions 1 and 2.
+
+[2,3,4]
+6
+> [1,3]
+
+[-1,0]
+-1
+> [1,2]
+
+=== tests
+[1,2]
+3
+> ?
+
+[-5,-3,0,4,9]
+6
+> ?
+
+[0,0,3,4]
+0
+> ?
+
+[1,2,3,4,4,9,56,90]
+8
+> ?
+
+@@@ problem 11 container-with-most-water
+title: Container With Most Water
+difficulty: Medium
+topics: Array, Two Pointers, Greedy
+params: height
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1
+
+=== description
+`height[i]` is the height of a vertical line drawn at `x = i`. Choose two lines that, together with the x-axis, form a container holding the most water.
+
+Return the maximum amount of water: `min(height[i], height[j]) * (j - i)`. The container may not be tilted.
+
+=== constraints
+- `2 <= n <= 10^5`
+- `0 <= height[i] <= 10^4`
+
+=== hints
+- Start with the widest container (first and last line).
+- Moving the taller line inward can never help. Why? Move the shorter one.
+
+=== template
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::maxArea);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.ints(std::max(n, 2), 0, 10000)); });
+}
+
+=== approach
+Start with `l = 0`, `r = n - 1`: the widest container. Its height is limited by the **shorter** line. If we moved the taller line inward, the width shrinks and the height is still capped by the same shorter line, so the area can only get worse. Therefore the shorter line can be discarded: move it inward. Repeat, tracking the best area. This examines O(n) pairs but provably never skips the optimum.
+
+=== solution
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int l = 0, r = (int)height.size() - 1;
+        int best = 0;
+        while (l < r) {
+            int h = min(height[l], height[r]);
+            best = max(best, h * (r - l));
+            // The shorter line limits every narrower container that uses it,
+            // so it can be safely dropped.
+            if (height[l] < height[r]) ++l;
+            else --r;
+        }
+        return best;
+    }
+};
+
+=== examples
+[1,8,6,2,5,4,8,3,7]
+> 49
+: Lines at index 1 (height 8) and index 8 (height 7): min(8,7) × 7 = 49.
+
+[1,1]
+> 1
+
+=== tests
+[0,0]
+> ?
+
+[4,3,2,1,4]
+> ?
+
+[1,2,1]
+> ?
+
+[2,3,10,5,7,8,9]
+> ?
+
+@@@ problem 15 3sum
+title: 3Sum
+difficulty: Medium
+topics: Array, Two Pointers, Sorting
+params: nums
+time: O(n²)
+space: O(log n) extra (sorting)
+bench: n=32..4096 time=n^2 space=n
+
+=== description
+Given an integer array `nums`, return all **distinct** triplets `[nums[i], nums[j], nums[k]]` with `i`, `j`, `k` pairwise different and `nums[i] + nums[j] + nums[k] == 0`.
+
+The answer must not contain duplicate triplets. The order of the triplets, and of the numbers inside a triplet, does not matter (the judge sorts both).
+
+=== constraints
+- `3 <= nums.length <= 3000`
+- `-10^5 <= nums[i] <= 10^5`
+
+=== hints
+- Sort the array first.
+- Fix the first element, then solve Two Sum II on the rest with two pointers.
+- To avoid duplicates, skip over equal values for the fixed element and after each found triplet.
+
+=== template
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::threeSum).sort_deep();
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 3);
+        long long R = n <= 40 ? 6 : std::min<long long>(100000, (long long)n * 30);
+        return lc::lines(g.ints(n, -R, R));
+    });
+}
+
+=== approach
+1. **Sort** the array.
+2. For each index `i` (skipping values equal to the previous one, to avoid duplicate triplets), look for pairs in `i+1..n-1` summing to `-nums[i]` with **two pointers** `l` and `r`: move `l` right if the sum is too small, `r` left if too large.
+3. After finding a triplet, move both pointers past any duplicates of the values just used.
+
+An early exit when `nums[i] > 0` helps: three positive numbers can't sum to zero. Total time O(n²); the sort needs O(log n) stack.
+
+=== solution
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        vector<vector<int>> out;
+        int n = nums.size();
+        for (int i = 0; i < n - 2; ++i) {
+            if (nums[i] > 0) break;                          // smallest is positive: done
+            if (i > 0 && nums[i] == nums[i - 1]) continue;   // same first value as before
+            int l = i + 1, r = n - 1;
+            while (l < r) {
+                int sum = nums[i] + nums[l] + nums[r];
+                if (sum < 0) ++l;
+                else if (sum > 0) --r;
+                else {
+                    out.push_back({nums[i], nums[l], nums[r]});
+                    // Skip duplicates of the pair we just used.
+                    while (l < r && nums[l] == nums[l + 1]) ++l;
+                    while (l < r && nums[r] == nums[r - 1]) --r;
+                    ++l, --r;
+                }
+            }
+        }
+        return out;
+    }
+};
+
+=== examples
+[-1,0,1,2,-1,-4]
+> [[-1,-1,2],[-1,0,1]]
+: The distinct triplets are [-1,0,1] and [-1,-1,2].
+
+[0,1,1]
+> []
+
+[0,0,0]
+> [[0,0,0]]
+
+=== tests
+[1,2,-3]
+> ?
+
+[0,0,0,0]
+> ?
+
+[-2,0,1,1,2]
+> ?
+
+[3,0,-2,-1,1,2]
+> ?
+
+[-4,-2,-2,-2,0,1,2,2,2,3,3,4,4,6,6]
+> ?

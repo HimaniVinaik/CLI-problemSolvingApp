@@ -1,0 +1,470 @@
+@@ category: Sliding Window
+
+@@@ problem 209 minimum-size-subarray-sum
+title: Minimum Size Subarray Sum
+difficulty: Medium
+topics: Array, Binary Search, Sliding Window, Prefix Sum
+params: target, nums
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1
+
+=== description
+Given an array of **positive** integers `nums` and a positive integer `target`, return the minimal length of a contiguous subarray whose sum is **greater than or equal to** `target`. If there is no such subarray, return `0`.
+
+=== constraints
+- `1 <= target <= 10^9`
+- `1 <= nums.length <= 10^5`
+- `1 <= nums[i] <= 10^4`
+
+=== hints
+- All numbers are positive, so extending a window increases its sum and shrinking decreases it.
+- Grow the window on the right; while the sum is big enough, record the length and shrink from the left.
+
+=== template
+class Solution {
+public:
+    int minSubArrayLen(int target, vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::minSubArrayLen);
+    h.gen([](lc::Gen &g, int n) {
+        auto v = g.ints(n, 1, 10000);
+        long long total = 0;
+        for (int x : v) total += x;
+        long long t = g.coin(0.1) ? total + g.irange(1, 100) : g.range(1, std::max(1LL, total / std::max(1, g.irange(1, 40))));
+        return lc::lines((int)std::min<long long>(t, 1000000000), v);
+    });
+}
+
+=== approach
+**Variable-size sliding window.** Extend the right end one element at a time, adding it to `sum`. As long as `sum >= target`, the current window is a candidate: record its length, then remove the leftmost element to see if a shorter window still works. Each element enters and leaves the window at most once, so the scan is O(n).
+
+This works only because all numbers are positive (the sum is monotone in the window size).
+
+=== solution
+class Solution {
+public:
+    int minSubArrayLen(int target, vector<int>& nums) {
+        int best = INT_MAX;
+        long long sum = 0;
+        int left = 0;
+        for (int right = 0; right < (int)nums.size(); ++right) {
+            sum += nums[right];                 // grow the window
+            while (sum >= target) {             // window is valid: try to shrink it
+                best = min(best, right - left + 1);
+                sum -= nums[left++];
+            }
+        }
+        return best == INT_MAX ? 0 : best;
+    }
+};
+
+=== examples
+7
+[2,3,1,2,4,3]
+> 2
+: The subarray [4,3] has the minimal length.
+
+4
+[1,4,4]
+> 1
+
+11
+[1,1,1,1,1,1,1,1]
+> 0
+: Even the whole array sums to only 8.
+
+=== tests
+1
+[1]
+> ?
+
+5
+[1]
+> ?
+
+15
+[1,2,3,4,5]
+> ?
+
+11
+[1,2,3,4,5]
+> ?
+
+@@@ problem 3 longest-substring-without-repeating-characters
+title: Longest Substring Without Repeating Characters
+difficulty: Medium
+topics: Hash Table, String, Sliding Window
+params: s
+time: O(n)
+space: O(min(n, alphabet))
+bench: n=64..1048576 time=n space=1 unit=s.length
+
+=== description
+Given a string `s`, return the length of the longest **substring** (contiguous) that contains no repeated characters.
+
+=== constraints
+- `0 <= s.length <= 5 * 10^4`
+- `s` consists of English letters, digits, symbols and spaces
+
+=== hints
+- Keep a window with no repeats. When the next character is already inside the window, where must the window's left edge jump to?
+- Remember the last index at which each character was seen.
+
+=== template
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::lengthOfLongestSubstring);
+    h.gen([](lc::Gen &g, int n) {
+        const std::string pools[] = {"ab", "abcde", "abcdefghijklmnopqrstuvwxyz0123456789 !?"};
+        return lc::lines(g.str(n, pools[g.irange(0, 2)]));
+    });
+}
+
+=== approach
+Slide a window `[left, i]` that never contains a repeated character. Store `last[c]`, the most recent index of each character. When we read `s[i]` and its last occurrence is inside the window (`last[c] >= left`), move `left` just past it. The window is then repeat-free again, and its length `i - left + 1` is a candidate.
+
+With a fixed-size table for the 128 ASCII characters, the extra space is constant.
+
+=== solution
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        vector<int> last(128, -1);   // last index where each ASCII char was seen
+        int best = 0, left = 0;
+        for (int i = 0; i < (int)s.size(); ++i) {
+            unsigned char c = s[i];
+            if (last[c] >= left) left = last[c] + 1;   // repeat inside window: jump past it
+            last[c] = i;
+            best = max(best, i - left + 1);
+        }
+        return best;
+    }
+};
+
+=== examples
+"abcabcbb"
+> 3
+: "abc" is the longest substring without repeats.
+
+"bbbbb"
+> 1
+
+"pwwkew"
+> 3
+: "wke". Note "pwke" is a subsequence, not a substring.
+
+=== tests
+""
+> ?
+
+" "
+> ?
+
+"au"
+> ?
+
+"dvdf"
+> ?
+
+"abba"
+> ?
+
+"tmmzuxt"
+> ?
+
+@@@ problem 30 substring-with-concatenation-of-all-words
+title: Substring with Concatenation of All Words
+difficulty: Hard
+topics: Hash Table, String, Sliding Window
+params: s, words
+time: O(n · L)
+space: O(k)
+bench: n=64..262144 time=n space=1 unit=s.length_(L_=_3,_k_=_4)
+
+=== description
+You are given a string `s` and an array `words` of strings that all have the **same length** `L`.
+
+A **concatenated string** is any string formed by concatenating all of `words` in some order (each word used exactly as many times as it appears). Return the starting indices of all substrings of `s` that are concatenated strings. The order does not matter (the judge sorts them).
+
+=== constraints
+- `1 <= s.length <= 10^4`
+- `1 <= words.length <= 5000`
+- `1 <= words[i].length <= 30`
+- `s` and `words[i]` consist of lowercase English letters
+
+=== hints
+- Every match starts at an offset `r` in `0..L-1` and then proceeds in steps of `L`.
+- For each offset, slide a window over whole words, keeping counts of the words inside the window.
+
+=== template
+class Solution {
+public:
+    vector<int> findSubstring(string s, vector<string>& words) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::findSubstring).sort_output();
+    h.gen([](lc::Gen &g, int n) {
+        int L = n <= 40 ? g.irange(1, 3) : 3, k = n <= 40 ? g.irange(1, 4) : 4;
+        std::vector<std::string> words;
+        for (int i = 0; i < k; ++i) words.push_back(g.lower(L, 2));
+        std::string s;
+        while ((int)s.size() < n) {
+            if (g.coin(0.3)) { auto w = words; g.shuffle(w); for (auto &x : w) s += x; }
+            else s += g.lower(g.irange(1, 3), 2);
+        }
+        s.resize(std::max(n, 1));
+        return lc::lines(s, words);
+    });
+}
+
+=== approach
+Let `L` be the word length and `k` the number of words; a match has length `L·k`.
+
+Any match starts at some offset `r` in `0..L-1` and consists of consecutive `L`-sized chunks. For each offset, **slide a window over chunks**:
+
+- read the next chunk; if it's not a word, clear the window and restart after it;
+- otherwise add it to `seen`; while that word now appears more often than in `words`, drop chunks from the left;
+- when the window holds exactly `k` chunks, record its start.
+
+Each chunk is added and removed at most once per offset, giving O(n · L) time (hashing a chunk costs O(L)).
+
+=== solution
+class Solution {
+public:
+    vector<int> findSubstring(string s, vector<string>& words) {
+        vector<int> result;
+        int L = words[0].size(), k = words.size(), n = s.size();
+        unordered_map<string, int> need;             // word -> required count
+        for (auto &w : words) need[w]++;
+
+        for (int r = 0; r < L; ++r) {                // each alignment separately
+            unordered_map<string, int> seen;         // counts inside the window
+            int left = r, count = 0;                 // count = #words in window
+            for (int j = r; j + L <= n; j += L) {
+                string w = s.substr(j, L);
+                auto it = need.find(w);
+                if (it == need.end()) {              // not a word: restart after it
+                    seen.clear();
+                    count = 0;
+                    left = j + L;
+                    continue;
+                }
+                seen[w]++;
+                count++;
+                while (seen[w] > it->second) {       // too many copies of w: shrink
+                    seen[s.substr(left, L)]--;
+                    left += L;
+                    count--;
+                }
+                if (count == k) {                    // window is a permutation
+                    result.push_back(left);
+                    seen[s.substr(left, L)]--;       // slide by one word
+                    left += L;
+                    count--;
+                }
+            }
+        }
+        return result;
+    }
+};
+
+=== examples
+"barfoothefoobarman"
+["foo","bar"]
+> [0,9]
+: "barfoo" starts at 0 and "foobar" starts at 9.
+
+"wordgoodgoodgoodbestword"
+["word","good","best","word"]
+> []
+
+"barfoofoobarthefoobarman"
+["bar","foo","the"]
+> [6,9,12]
+
+=== tests
+"a"
+["a"]
+> ?
+
+"aaaaaa"
+["aa","aa"]
+> ?
+
+"wordgoodgoodgoodbestword"
+["word","good","best","good"]
+> ?
+
+"lingmindraboofooowingdingbarrwingmonkeypoundcake"
+["fooo","barr","wing","ding","wing"]
+> ?
+
+"ababab"
+["ab","ba"]
+> ?
+
+@@@ problem 76 minimum-window-substring
+title: Minimum Window Substring
+difficulty: Hard
+topics: Hash Table, String, Sliding Window
+params: s, t
+time: O(n + m)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=s.length
+
+=== description
+Given strings `s` (length `n`) and `t` (length `m`), return the **shortest substring** of `s` that contains every character of `t`, **including duplicates**. If there is no such substring, return `""`.
+
+If several windows have the minimal length, any of them is accepted (the judge reports the leftmost one).
+
+Follow-up: can you do it in O(n + m) time?
+
+=== constraints
+- `1 <= n, m <= 10^5`
+- `s` and `t` consist of English letters
+
+=== hints
+- Count how many of each character you still need, plus how many characters are still missing in total.
+- Expand the right edge until nothing is missing, then shrink from the left while the window stays valid.
+
+=== template
+class Solution {
+public:
+    string minWindow(string s, string t) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string s = c.arg<std::string>(), t = c.arg<std::string>();
+        const std::string S = s, T = t;  // copies for validation (made before timing)
+        std::string r;
+        Solution sol;
+        c.time([&] { r = sol.minWindow(std::move(s), std::move(t)); });
+        // Any minimal window is accepted, so print a canonical one: the leftmost
+        // valid window with the returned length. Invalid answers print as-is.
+        int needT[128] = {0};
+        for (char ch : T) needT[(unsigned char)ch]++;
+        auto covers = [&](const std::string &w) {
+            int cnt[128] = {0};
+            for (char ch : w) cnt[(unsigned char)ch & 127]++;
+            for (int k = 0; k < 128; ++k) if (cnt[k] < needT[k]) return false;
+            return true;
+        };
+        if (r.empty() || S.find(r) == std::string::npos || !covers(r)) { c.out(r); return; }
+        size_t L = r.size();
+        int cnt[128] = {0};
+        long missing = (long)T.size();
+        for (size_t i = 0; i < S.size(); ++i) {
+            unsigned char in = S[i];
+            if (cnt[in] < needT[in]) --missing;
+            ++cnt[in];
+            if (i >= L) {
+                unsigned char outc = S[i - L];
+                --cnt[outc];
+                if (cnt[outc] < needT[outc]) ++missing;
+            }
+            if (i + 1 >= L && missing == 0) { c.out(S.substr(i + 1 - L, L)); return; }
+        }
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        std::string alpha = g.coin() ? "ABCabc" : "ABCDEFGHab";
+        std::string s = g.str(n, alpha);
+        std::string t = g.str(g.irange(1, std::min(6, std::max(1, n))), alpha.substr(0, 4));
+        return lc::lines(s, t);
+    });
+}
+
+=== approach
+Keep `need[c]`: how many more copies of `c` the window still needs (negative = surplus), and `missing`: the total number of characters of `t` not yet covered.
+
+1. Move `right` forward. If `need[s[right]] > 0` this character was useful, so `missing--`. Then `need[s[right]]--`.
+2. When `missing == 0` the window is valid. Shrink it from the left: while the leftmost character is surplus (`need[s[left]] < 0`), give it back and advance `left`. Now the window is minimal for this `right`; record it.
+3. To keep searching, drop one needed character from the left (`missing++`) and continue.
+
+Both pointers only move forward, so the total time is O(n + m).
+
+=== solution
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        int need[128] = {0};
+        for (char c : t) need[(unsigned char)c]++;
+        int missing = t.size();               // characters of t not yet in the window
+        int bestStart = 0, bestLen = INT_MAX;
+        int left = 0;
+        for (int right = 0; right < (int)s.size(); ++right) {
+            unsigned char c = s[right];
+            if (need[c] > 0) missing--;       // this char was still required
+            need[c]--;
+            if (missing == 0) {
+                // Drop surplus characters from the left.
+                while (need[(unsigned char)s[left]] < 0) need[(unsigned char)s[left++]]++;
+                if (right - left + 1 < bestLen) {
+                    bestLen = right - left + 1;
+                    bestStart = left;
+                }
+                // Give up the leftmost needed char and look for the next window.
+                need[(unsigned char)s[left++]]++;
+                missing++;
+            }
+        }
+        return bestLen == INT_MAX ? "" : s.substr(bestStart, bestLen);
+    }
+};
+
+=== examples
+"ADOBECODEBANC"
+"ABC"
+> "BANC"
+: "BANC" contains 'A', 'B' and 'C'.
+
+"a"
+"a"
+> "a"
+
+"a"
+"aa"
+> ""
+: t needs two 'a's but s has only one.
+
+=== tests
+"ab"
+"b"
+> ?
+
+"abc"
+"cba"
+> ?
+
+"aa"
+"aa"
+> ?
+
+"bba"
+"ab"
+> ?
+
+"cabwefgewcwaefgcf"
+"cae"
+> ?

@@ -1,0 +1,376 @@
+@@ category: Intervals
+
+@@@ problem 228 summary-ranges
+title: Summary Ranges
+difficulty: Easy
+topics: Array
+params: nums
+time: O(n)
+space: O(1) extra (output excluded)
+bench: n=64..1048576 time=n space=n
+
+=== description
+You are given a **sorted** array `nums` of **unique** integers. Return the smallest sorted list of ranges that covers all the numbers exactly.
+
+Format each range `[a, b]` as `"a->b"` if `a != b`, or `"a"` if `a == b`.
+
+=== constraints
+- `0 <= nums.length <= 20`
+- `-2^31 <= nums[i] <= 2^31 - 1`
+- `nums` is sorted in ascending order and all values are unique
+
+=== hints
+- A range continues while `nums[i+1] == nums[i] + 1`.
+- Careful: `nums[i] + 1` can overflow for `INT_MAX`; compare using `long long` (or subtract instead).
+
+=== template
+class Solution {
+public:
+    vector<string> summaryRanges(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::summaryRanges);
+    h.gen([](lc::Gen &g, int n) {
+        std::vector<int> v;
+        long long x = g.coin(0.2) ? (long long)INT_MIN : g.irange(-1000, 1000);
+        for (int i = 0; i < n && x <= INT_MAX; ++i) {
+            v.push_back((int)x);
+            x += g.coin(0.6) ? 1 : g.irange(2, 5);
+        }
+        return lc::lines(v);
+    });
+}
+
+=== approach
+Walk the array with a pointer `i` at the start of a range. Extend `j` while the next number is exactly one larger. The range is `nums[i]..nums[j]`; output `"a"` or `"a->b"` and continue from `j + 1`. Using `long long` for the "+1" comparison avoids overflow at `INT_MAX`.
+
+=== solution
+class Solution {
+public:
+    vector<string> summaryRanges(vector<int>& nums) {
+        vector<string> out;
+        int n = nums.size();
+        for (int i = 0; i < n;) {
+            int j = i;
+            // extend while consecutive (long long avoids overflow at INT_MAX)
+            while (j + 1 < n && (long long)nums[j + 1] == (long long)nums[j] + 1) ++j;
+            if (i == j) out.push_back(to_string(nums[i]));
+            else out.push_back(to_string(nums[i]) + "->" + to_string(nums[j]));
+            i = j + 1;
+        }
+        return out;
+    }
+};
+
+=== examples
+[0,1,2,4,5,7]
+> ["0->2","4->5","7"]
+
+[0,2,3,4,6,8,9]
+> ["0","2->4","6","8->9"]
+
+=== tests
+[]
+> ?
+
+[-1]
+> ?
+
+[-2147483648,-2147483647,2147483647]
+> ?
+
+[1,3,5,7]
+> ?
+
+@@@ problem 56 merge-intervals
+title: Merge Intervals
+difficulty: Medium
+topics: Array, Sorting
+params: intervals
+time: O(n log n)
+space: O(n)
+bench: n=64..524288 time=nlogn space=n
+
+=== description
+Given an array of `intervals` where `intervals[i] = [start_i, end_i]`, merge all **overlapping** intervals and return the resulting non-overlapping intervals that cover all the input intervals.
+
+Intervals that merely touch (like `[1,4]` and `[4,5]`) also overlap. The judge sorts your output, so any order is accepted.
+
+=== constraints
+- `1 <= intervals.length <= 10^4`
+- `0 <= start_i <= end_i <= 10^4`
+
+=== hints
+- Sort by start. Then overlapping intervals are adjacent.
+- Compare each interval with the **last merged** one.
+
+=== template
+class Solution {
+public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::merge).sort_output();
+    h.gen([](lc::Gen &g, int n) {
+        std::vector<std::vector<int>> v;
+        int span = std::max(10, 4 * n);
+        for (int i = 0; i < std::max(n, 1); ++i) {
+            int a = g.irange(0, span), len = g.irange(0, 6);
+            v.push_back({a, a + len});
+        }
+        return lc::lines(v);
+    });
+}
+
+=== approach
+**Sort by start.** Then scan: if the current interval starts at or before the end of the last merged interval, they overlap, so extend the last one's end to the max of both ends. Otherwise start a new merged interval.
+
+After sorting, any interval that overlaps the current merged block must come right after it, so one pass suffices. Sorting dominates: O(n log n).
+
+=== solution
+class Solution {
+public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        sort(intervals.begin(), intervals.end());          // by start (then end)
+        vector<vector<int>> merged;
+        for (auto &iv : intervals) {
+            if (!merged.empty() && iv[0] <= merged.back()[1]) {
+                merged.back()[1] = max(merged.back()[1], iv[1]);   // overlap: extend
+            } else {
+                merged.push_back(iv);                               // gap: new block
+            }
+        }
+        return merged;
+    }
+};
+
+=== examples
+[[1,3],[2,6],[8,10],[15,18]]
+> [[1,6],[8,10],[15,18]]
+: [1,3] and [2,6] overlap and become [1,6].
+
+[[1,4],[4,5]]
+> [[1,5]]
+: Touching intervals are merged.
+
+[[4,7],[1,4]]
+> [[1,7]]
+
+=== tests
+[[1,1]]
+> ?
+
+[[1,4],[0,4]]
+> ?
+
+[[1,4],[2,3]]
+> ?
+
+[[2,3],[4,5],[6,7],[8,9],[1,10]]
+> ?
+
+@@@ problem 57 insert-interval
+title: Insert Interval
+difficulty: Medium
+topics: Array
+params: intervals, newInterval
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n
+
+=== description
+`intervals` is a list of **non-overlapping** intervals sorted by start. Insert `newInterval` into it, merging where necessary, so that the result is still sorted and non-overlapping. Return the new list.
+
+=== constraints
+- `0 <= intervals.length <= 10^4`
+- `0 <= start_i <= end_i <= 10^5`
+- `intervals` is sorted by `start_i` and non-overlapping
+- `newInterval.length == 2`, `0 <= start <= end <= 10^5`
+
+=== hints
+- The result has three parts: intervals entirely before `newInterval`, those overlapping it, and those entirely after.
+- Overlapping intervals are all absorbed into one: min of starts, max of ends.
+
+=== template
+class Solution {
+public:
+    vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::insert);
+    h.gen([](lc::Gen &g, int n) {
+        std::vector<std::vector<int>> v;
+        int x = g.irange(0, 3);
+        for (int i = 0; i < n; ++i) {
+            int a = x + g.irange(0, 3), b = a + g.irange(0, 4);
+            v.push_back({a, b});
+            x = b + 1;
+        }
+        int a = g.irange(0, x + 2), b = a + g.irange(0, std::max(1, x / 4));
+        return lc::lines(v, std::vector<int>{a, b});
+    });
+}
+
+=== approach
+Since the list is sorted and disjoint, one scan in three phases works:
+
+1. copy intervals that **end before** `newInterval` starts;
+2. **absorb** every interval that overlaps it, widening `newInterval` to the min start and max end, then add it;
+3. copy the remaining intervals, which all start after it.
+
+Each interval is handled once: O(n) time.
+
+=== solution
+class Solution {
+public:
+    vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {
+        vector<vector<int>> out;
+        int i = 0, n = intervals.size();
+        int s = newInterval[0], e = newInterval[1];
+
+        while (i < n && intervals[i][1] < s) out.push_back(intervals[i++]);   // 1) before
+        while (i < n && intervals[i][0] <= e) {                               // 2) overlapping
+            s = min(s, intervals[i][0]);
+            e = max(e, intervals[i][1]);
+            ++i;
+        }
+        out.push_back({s, e});
+        while (i < n) out.push_back(intervals[i++]);                          // 3) after
+        return out;
+    }
+};
+
+=== examples
+[[1,3],[6,9]]
+[2,5]
+> [[1,5],[6,9]]
+
+[[1,2],[3,5],[6,7],[8,10],[12,16]]
+[4,8]
+> [[1,2],[3,10],[12,16]]
+: [4,8] overlaps [3,5], [6,7] and [8,10].
+
+=== tests
+[]
+[5,7]
+> ?
+
+[[1,5]]
+[2,3]
+> ?
+
+[[1,5]]
+[6,8]
+> ?
+
+[[3,5],[12,15]]
+[6,6]
+> ?
+
+[[1,5]]
+[0,0]
+> ?
+
+@@@ problem 452 minimum-number-of-arrows-to-burst-balloons
+title: Minimum Number of Arrows to Burst Balloons
+difficulty: Medium
+topics: Array, Greedy, Sorting
+params: points
+time: O(n log n)
+space: O(log n)
+bench: n=64..524288 time=nlogn space=logn
+
+=== description
+Balloons are taped to a wall; balloon `i` spans the horizontal interval `points[i] = [x_start, x_end]`. An arrow shot vertically at position `x` bursts every balloon with `x_start <= x <= x_end`.
+
+Return the **minimum number of arrows** needed to burst all balloons.
+
+=== constraints
+- `1 <= points.length <= 10^5`
+- `-2^31 <= x_start < x_end <= 2^31 - 1`
+
+=== hints
+- Sort balloons by their **end**.
+- Shoot at the end of the first balloon; it bursts every balloon that starts before that point. Then repeat with the first balloon it missed.
+
+=== template
+class Solution {
+public:
+    int findMinArrowShots(vector<vector<int>>& points) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::findMinArrowShots);
+    h.gen([](lc::Gen &g, int n) {
+        std::vector<std::vector<int>> v;
+        bool extreme = g.coin(0.2);
+        for (int i = 0; i < std::max(n, 1); ++i) {
+            long long a = extreme ? g.range(INT_MIN, INT_MAX - 1) : g.range(-4 * n - 10, 4 * n + 10);
+            long long b = extreme ? g.range(a + 1, INT_MAX) : a + g.range(1, 8);
+            v.push_back({(int)a, (int)b});
+        }
+        return lc::lines(v);
+    });
+}
+
+=== approach
+**Greedy by end point.** Sort balloons by `x_end`. Shoot the first arrow at the end of the first balloon: that is the rightmost position that still bursts it, so it bursts as many later balloons as possible. Skip every balloon whose start is `<=` that position; the first balloon that starts after it needs a new arrow at its own end.
+
+Compare with `<` / `<=` directly instead of subtracting, to avoid overflow on extreme coordinates.
+
+=== solution
+class Solution {
+public:
+    int findMinArrowShots(vector<vector<int>>& points) {
+        sort(points.begin(), points.end(),
+             [](const vector<int> &a, const vector<int> &b) { return a[1] < b[1]; });
+        int arrows = 1;
+        int pos = points[0][1];                 // first arrow: end of first balloon
+        for (size_t i = 1; i < points.size(); ++i) {
+            if (points[i][0] > pos) {           // starts after the arrow: missed
+                ++arrows;
+                pos = points[i][1];
+            }
+        }
+        return arrows;
+    }
+};
+
+=== examples
+[[10,16],[2,8],[1,6],[7,12]]
+> 2
+: Shoot at x = 6 (bursts [2,8] and [1,6]) and at x = 11 (bursts [10,16] and [7,12]).
+
+[[1,2],[3,4],[5,6],[7,8]]
+> 4
+
+[[1,2],[2,3],[3,4],[4,5]]
+> 2
+
+=== tests
+[[1,2]]
+> ?
+
+[[-2147483648,2147483647]]
+> ?
+
+[[-2147483646,-2147483645],[2147483646,2147483647]]
+> ?
+
+[[3,9],[7,12],[3,8],[6,8],[9,10],[2,9],[0,9],[3,9],[0,6],[2,8]]
+> ?

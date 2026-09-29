@@ -1,0 +1,836 @@
+@@ category: Hashmap
+
+@@@ problem 383 ransom-note
+title: Ransom Note
+difficulty: Easy
+topics: Hash Table, String, Counting
+params: ransomNote, magazine
+time: O(m + n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=magazine.length
+
+=== description
+Given two strings `ransomNote` and `magazine`, return `true` if `ransomNote` can be built from the letters of `magazine`, where each letter of `magazine` can be used **only once**.
+
+=== constraints
+- `1 <= ransomNote.length, magazine.length <= 10^5`
+- both strings consist of lowercase English letters
+
+=== hints
+- Count the letters available in `magazine` (26 counters are enough).
+- Consume them while reading `ransomNote`; if a counter goes negative, it's impossible.
+
+=== template
+class Solution {
+public:
+    bool canConstruct(string ransomNote, string magazine) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::canConstruct);
+    h.gen([](lc::Gen &g, int n) {
+        std::string mag = g.lower(n, 6);
+        std::string note;
+        for (char ch : mag) if (g.coin(0.5)) note += ch;
+        auto v = std::vector<char>(note.begin(), note.end());
+        g.shuffle(v);
+        note.assign(v.begin(), v.end());
+        if (note.empty() || g.coin(0.4)) note += (char)('a' + g.irange(0, 7));
+        return lc::lines(note, mag);
+    });
+}
+
+=== approach
+Count each letter of `magazine` in an array of 26 integers. Then, for each letter of the note, decrement its count; if a count would drop below zero, the magazine doesn't have enough of that letter. Two linear scans, fixed-size memory.
+
+=== solution
+class Solution {
+public:
+    bool canConstruct(string ransomNote, string magazine) {
+        int count[26] = {0};
+        for (char c : magazine) count[c - 'a']++;       // letters available
+        for (char c : ransomNote) {
+            if (--count[c - 'a'] < 0) return false;     // used more than available
+        }
+        return true;
+    }
+};
+
+=== examples
+"a"
+"b"
+> false
+
+"aa"
+"ab"
+> false
+
+"aa"
+"aab"
+> true
+
+=== tests
+"abc"
+"cba"
+> ?
+
+"z"
+"z"
+> ?
+
+"aab"
+"baa"
+> ?
+
+"fffbfg"
+"effjfggbffjdgbjjhhdegh"
+> ?
+
+@@@ problem 205 isomorphic-strings
+title: Isomorphic Strings
+difficulty: Easy
+topics: Hash Table, String
+params: s, t
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=s.length
+
+=== description
+Two strings `s` and `t` are **isomorphic** if the characters of `s` can be replaced to get `t`, such that:
+
+- every occurrence of a character is replaced by the same character, preserving order;
+- no two different characters map to the same character (a character may map to itself).
+
+Return `true` if `s` and `t` are isomorphic.
+
+=== constraints
+- `1 <= s.length <= 5 * 10^4`
+- `t.length == s.length`
+- `s` and `t` consist of any valid ASCII characters
+
+=== hints
+- You need the mapping in both directions to be consistent.
+- Alternatively: record the position where each character was last seen, in both strings; those positions must always agree.
+
+=== template
+class Solution {
+public:
+    bool isIsomorphic(string s, string t) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isIsomorphic);
+    h.gen([](lc::Gen &g, int n) {
+        std::string alpha = "abcdefghij";
+        std::string s = g.str(n, alpha.substr(0, g.irange(1, 10)));
+        auto perm = g.perm(26);
+        std::string t;
+        for (char ch : s) t += (char)('a' + perm[ch - 'a']);
+        if (g.coin(0.4) && n > 0) t[g.irange(0, n - 1)] = 'a' + g.irange(0, 25);
+        return lc::lines(s, t);
+    });
+}
+
+=== approach
+Characters are isomorphic-compatible exactly when, at every position, `s[i]` and `t[i]` were **last seen at the same index** (or both never seen). Keep `lastS[256]` and `lastT[256]` storing `index + 1` of the previous occurrence. A mismatch means one string repeats a character where the other doesn't, which breaks the bijection. This checks both directions of the mapping at once.
+
+=== solution
+class Solution {
+public:
+    bool isIsomorphic(string s, string t) {
+        // last position (+1) at which each character appeared; 0 = never
+        int lastS[256] = {0}, lastT[256] = {0};
+        for (int i = 0; i < (int)s.size(); ++i) {
+            unsigned char a = s[i], b = t[i];
+            if (lastS[a] != lastT[b]) return false;   // histories differ
+            lastS[a] = lastT[b] = i + 1;
+        }
+        return true;
+    }
+};
+
+=== examples
+"egg"
+"add"
+> true
+: 'e' maps to 'a' and 'g' maps to 'd'.
+
+"foo"
+"bar"
+> false
+: 'o' would need to map to both 'a' and 'r'.
+
+"paper"
+"title"
+> true
+
+=== tests
+"a"
+"a"
+> ?
+
+"ab"
+"aa"
+> ?
+
+"badc"
+"baba"
+> ?
+
+"13"
+"42"
+> ?
+
+@@@ problem 290 word-pattern
+title: Word Pattern
+difficulty: Easy
+topics: Hash Table, String
+params: pattern, s
+time: O(n)
+space: O(n)
+bench: n=64..262144 time=n space=n unit=pattern.length
+
+=== description
+Given a `pattern` and a string `s` of space-separated words, decide whether `s` **follows** the pattern: there must be a bijection between the letters of `pattern` and the words of `s`.
+
+- Each letter maps to exactly one word, and each word to exactly one letter.
+- No two letters map to the same word and no two words to the same letter.
+
+=== constraints
+- `1 <= pattern.length <= 300`
+- `pattern` contains lowercase English letters
+- `1 <= s.length <= 3000`
+- `s` contains lowercase letters and single spaces, with no leading or trailing spaces
+
+=== hints
+- Split `s` into words first; if the counts differ, the answer is `false`.
+- Keep two maps (letter → word and word → letter) and check both on every step.
+
+=== template
+class Solution {
+public:
+    bool wordPattern(string pattern, string s) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::wordPattern);
+    h.gen([](lc::Gen &g, int n) {
+        std::string pat = g.lower(std::max(1, n), g.irange(1, 5));
+        std::vector<std::string> dict = {"dog", "cat", "fish", "bird", "ant", "bee"};
+        g.shuffle(dict);
+        std::string s;
+        for (char ch : pat) s += (s.empty() ? "" : " ") + dict[ch - 'a'];
+        if (g.coin(0.3)) pat[g.irange(0, (int)pat.size() - 1)] = 'a' + g.irange(0, 5);
+        if (g.coin(0.1)) s += " dog";
+        return lc::lines(pat, s);
+    });
+}
+
+=== approach
+Split `s` into words. If the number of words differs from the pattern length, return `false`. Then walk both sequences together with two hash maps, `letter → word` and `word → letter`. At each position, either both are new (record the pair) or both must already point at each other. Checking both maps enforces a true bijection.
+
+=== solution
+class Solution {
+public:
+    bool wordPattern(string pattern, string s) {
+        vector<string> words;
+        istringstream in(s);
+        for (string w; in >> w;) words.push_back(w);
+        if (words.size() != pattern.size()) return false;
+
+        unordered_map<char, string> toWord;
+        unordered_map<string, char> toChar;
+        for (size_t i = 0; i < words.size(); ++i) {
+            char c = pattern[i];
+            auto a = toWord.find(c);
+            auto b = toChar.find(words[i]);
+            if (a == toWord.end() && b == toChar.end()) {   // new pair
+                toWord[c] = words[i];
+                toChar[words[i]] = c;
+            } else if (a == toWord.end() || b == toChar.end() || a->second != words[i] || b->second != c) {
+                return false;                                // one side disagrees
+            }
+        }
+        return true;
+    }
+};
+
+=== examples
+"abba"
+"dog cat cat dog"
+> true
+
+"abba"
+"dog cat cat fish"
+> false
+
+"aaaa"
+"dog cat cat dog"
+> false
+
+=== tests
+"a"
+"dog"
+> ?
+
+"ab"
+"dog dog"
+> ?
+
+"aaa"
+"aa aa aa aa"
+> ?
+
+"abc"
+"b c a"
+> ?
+
+@@@ problem 242 valid-anagram
+title: Valid Anagram
+difficulty: Easy
+topics: Hash Table, String, Sorting
+params: s, t
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=s.length
+
+=== description
+Given two strings `s` and `t`, return `true` if `t` is an **anagram** of `s` (the same letters with the same counts, in any order).
+
+Follow-up: what if the input may contain Unicode characters?
+
+=== constraints
+- `1 <= s.length, t.length <= 5 * 10^4`
+- `s` and `t` consist of lowercase English letters
+
+=== hints
+- Sorting both strings works in O(n log n).
+- Counting letters works in O(n): +1 for `s`, -1 for `t`, all counts must end at zero.
+
+=== template
+class Solution {
+public:
+    bool isAnagram(string s, string t) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isAnagram);
+    h.gen([](lc::Gen &g, int n) {
+        std::string s = g.lower(n, g.irange(1, 26));
+        std::vector<char> v(s.begin(), s.end());
+        g.shuffle(v);
+        std::string t(v.begin(), v.end());
+        if (g.coin(0.4) && n > 0) t[g.irange(0, n - 1)] = 'a' + g.irange(0, 25);
+        if (g.coin(0.1)) t += 'a';
+        return lc::lines(s, t);
+    });
+}
+
+=== approach
+If the lengths differ, they can't be anagrams. Otherwise count letters with one array of 26 integers: add 1 for each letter of `s` and subtract 1 for each letter of `t`. They are anagrams iff every counter ends at zero.
+
+For Unicode input, replace the array with a hash map keyed by code point.
+
+=== solution
+class Solution {
+public:
+    bool isAnagram(string s, string t) {
+        if (s.size() != t.size()) return false;
+        int count[26] = {0};
+        for (size_t i = 0; i < s.size(); ++i) {
+            count[s[i] - 'a']++;      // letter supplied by s
+            count[t[i] - 'a']--;      // letter consumed by t
+        }
+        for (int c : count)
+            if (c != 0) return false;
+        return true;
+    }
+};
+
+=== examples
+"anagram"
+"nagaram"
+> true
+
+"rat"
+"car"
+> false
+
+=== tests
+"a"
+"a"
+> ?
+
+"a"
+"ab"
+> ?
+
+"aacc"
+"ccac"
+> ?
+
+"listen"
+"silent"
+> ?
+
+@@@ problem 49 group-anagrams
+title: Group Anagrams
+difficulty: Medium
+topics: Array, Hash Table, String, Sorting
+params: strs
+time: O(n · k log k)
+space: O(n · k)
+bench: n=64..262144 time=n space=n unit=number_of_strings_(short_strings)
+
+=== description
+Given an array of strings `strs`, group the **anagrams** together. You may return the groups in any order, and the strings inside each group in any order (the judge sorts both).
+
+=== constraints
+- `1 <= strs.length <= 10^4`
+- `0 <= strs[i].length <= 100`
+- `strs[i]` consists of lowercase English letters
+
+=== hints
+- Two strings are anagrams iff they are equal after sorting their letters.
+- Use the sorted string (or a 26-letter count signature) as a hash map key.
+
+=== template
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::groupAnagrams).sort_deep();
+    h.gen([](lc::Gen &g, int n) {
+        std::vector<std::string> v;
+        for (int i = 0; i < n; ++i) v.push_back(g.lower(g.irange(0, 5), 4));
+        return lc::lines(v);
+    });
+}
+
+=== approach
+Anagrams become identical when their letters are sorted, so the sorted string is a perfect **group key**. Map each key to the list of strings that produce it, then output the lists.
+
+With `n` strings of length at most `k`, sorting keys costs O(k log k) each, O(n · k log k) in total. (A 26-count signature makes it O(n · k).)
+
+=== solution
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        unordered_map<string, vector<string>> groups;   // sorted letters -> members
+        for (auto &s : strs) {
+            string key = s;
+            sort(key.begin(), key.end());
+            groups[key].push_back(s);
+        }
+        vector<vector<string>> out;
+        out.reserve(groups.size());
+        for (auto &[key, members] : groups) out.push_back(move(members));
+        return out;
+    }
+};
+
+=== examples
+["eat","tea","tan","ate","nat","bat"]
+> [["ate","eat","tea"],["bat"],["nat","tan"]]
+: "bat" has no anagram in the list; the other words form two groups.
+
+[""]
+> [[""]]
+
+["a"]
+> [["a"]]
+
+=== tests
+["",""]
+> ?
+
+["abc","bca","cab","xyz","zyx","q"]
+> ?
+
+["ab","ba","abc","a","b"]
+> ?
+
+@@@ problem 1 two-sum
+title: Two Sum
+difficulty: Easy
+topics: Array, Hash Table
+params: nums, target
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n
+
+=== description
+Given an array of integers `nums` and an integer `target`, return the **indices** of the two numbers that add up to `target`.
+
+Each input has **exactly one** solution, and you may not use the same element twice. You may return the two indices in any order (the judge sorts them).
+
+Follow-up: can you do better than O(n²) time?
+
+=== constraints
+- `2 <= nums.length <= 10^4`
+- `-10^9 <= nums[i] <= 10^9`
+- `-10^9 <= target <= 10^9`
+- exactly one valid answer exists
+
+=== hints
+- For each number `x`, you are looking for `target - x`. How can you find it in O(1)?
+- Store the numbers you've already seen in a hash map from value to index.
+
+=== template
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::twoSum).sort_output();
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 2);
+        // Multiples of 4 everywhere except one value = 1 (mod 4) and one = 2 (mod 4):
+        // only that pair can sum to 3 (mod 4), so the answer is unique.
+        std::vector<int> v(n);
+        for (auto &x : v) x = 4 * g.irange(-100000000, 100000000);
+        int i = g.irange(0, n - 1), j = g.irange(0, n - 2);
+        if (j >= i) ++j;
+        v[i] += 1;
+        v[j] += 2;
+        return lc::lines(v, v[i] + v[j]);
+    });
+}
+
+=== approach
+Scan the array once, keeping a **hash map from value to index** of the elements seen so far. For the current element `x` at index `i`, check whether `target - x` is already in the map; if so, the two indices are the answer. Otherwise store `x → i` and continue.
+
+Checking before inserting guarantees we never pair an element with itself. One pass, O(n) time, O(n) memory.
+
+=== solution
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> seen;              // value -> index
+        for (int i = 0; i < (int)nums.size(); ++i) {
+            auto it = seen.find(target - nums[i]); // complement seen earlier?
+            if (it != seen.end()) return {it->second, i};
+            seen[nums[i]] = i;
+        }
+        return {};                                 // unreachable: answer guaranteed
+    }
+};
+
+=== examples
+[2,7,11,15]
+9
+> [0,1]
+: nums[0] + nums[1] == 9.
+
+[3,2,4]
+6
+> [1,2]
+
+[3,3]
+6
+> [0,1]
+
+=== tests
+[1,5]
+6
+> ?
+
+[-3,4,3,90]
+0
+> ?
+
+[0,4,3,0]
+0
+> ?
+
+[-1,-2,-3,-4,-5]
+-8
+> ?
+
+[1000000000,-1000000000,5]
+5
+> ?
+
+@@@ problem 202 happy-number
+title: Happy Number
+difficulty: Easy
+topics: Hash Table, Math, Two Pointers
+params: n
+time: O(log n)
+space: O(1)
+bench: off
+
+=== description
+A number is **happy** if repeatedly replacing it by the sum of the squares of its digits eventually reaches `1`. Numbers that never reach `1` get stuck in a cycle.
+
+Return `true` if `n` is a happy number.
+
+=== constraints
+- `1 <= n <= 2^31 - 1`
+
+=== hints
+- The sequence either reaches 1 or loops forever. How do you detect a loop?
+- Floyd's cycle detection (a slow and a fast pointer) needs no extra memory.
+
+=== template
+class Solution {
+public:
+    bool isHappy(int n) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isHappy);
+    h.gen([](lc::Gen &g, int n) {
+        return lc::lines(n < 10 ? g.irange(1, 100) : g.irange(1, 2147483647));
+    });
+}
+
+=== approach
+The digit-square-sum sequence is deterministic, so it either reaches `1` or enters a cycle. Use **Floyd's tortoise and hare**: `slow` advances one step, `fast` two steps. If there is a cycle they must meet; the number is happy iff they meet at `1` (1 maps to itself).
+
+After the first step every value is at most 810 (for 10 digits of 9), so the number of steps is small: effectively O(log n) for the first step plus a constant.
+
+=== solution
+class Solution {
+    // Sum of the squares of the decimal digits.
+    int next(int x) {
+        int s = 0;
+        while (x > 0) {
+            int d = x % 10;
+            s += d * d;
+            x /= 10;
+        }
+        return s;
+    }
+
+public:
+    bool isHappy(int n) {
+        int slow = n, fast = next(n);
+        while (fast != 1 && slow != fast) {   // Floyd's cycle detection
+            slow = next(slow);
+            fast = next(next(fast));
+        }
+        return fast == 1;
+    }
+};
+
+=== examples
+19
+> true
+: 1² + 9² = 82, 8² + 2² = 68, 6² + 8² = 100, 1² + 0² + 0² = 1.
+
+2
+> false
+
+=== tests
+1
+> ?
+
+7
+> ?
+
+4
+> ?
+
+2147483647
+> ?
+
+1111111
+> ?
+
+@@@ problem 219 contains-duplicate-ii
+title: Contains Duplicate II
+difficulty: Easy
+topics: Array, Hash Table, Sliding Window
+params: nums, k
+time: O(n)
+space: O(min(n, k))
+bench: n=64..1048576 time=n space=n
+
+=== description
+Given an integer array `nums` and an integer `k`, return `true` if there are two **distinct** indices `i` and `j` with `nums[i] == nums[j]` and `abs(i - j) <= k`.
+
+=== constraints
+- `1 <= nums.length <= 10^5`
+- `-10^9 <= nums[i] <= 10^9`
+- `0 <= k <= 10^5`
+
+=== hints
+- Only the last `k` elements matter when you look at `nums[i]`.
+- Keep a hash set containing exactly the previous `k` values (a sliding window).
+
+=== template
+class Solution {
+public:
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::containsNearbyDuplicate);
+    h.gen([](lc::Gen &g, int n) {
+        if (n <= 40) return lc::lines(g.ints(n, 0, std::max(2, n / 2)), g.irange(0, n));
+        // large: all distinct (forces a full scan), window of n/2
+        auto v = g.distinct(n, -1000000000, 1000000000);
+        return lc::lines(v, n / 2);
+    });
+}
+
+=== approach
+Maintain a **sliding window** hash set holding the values at indices `i-k .. i-1`. For each `nums[i]`: if it is already in the set, we found two equal values at most `k` apart. Otherwise insert it, and once the window grows beyond `k` elements, remove `nums[i-k]`.
+
+The set never holds more than `k` values, so memory is O(min(n, k)).
+
+=== solution
+class Solution {
+public:
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+        unordered_set<int> window;                 // values of the last k indices
+        for (int i = 0; i < (int)nums.size(); ++i) {
+            if (window.count(nums[i])) return true;
+            window.insert(nums[i]);
+            if ((int)window.size() > k) window.erase(nums[i - k]);   // slide
+        }
+        return false;
+    }
+};
+
+=== examples
+[1,2,3,1]
+3
+> true
+
+[1,0,1,1]
+1
+> true
+
+[1,2,3,1,2,3]
+2
+> false
+
+=== tests
+[1]
+0
+> ?
+
+[1,1]
+0
+> ?
+
+[99,99]
+2
+> ?
+
+[1,2,1]
+1
+> ?
+
+@@@ problem 128 longest-consecutive-sequence
+title: Longest Consecutive Sequence
+difficulty: Medium
+topics: Array, Hash Table, Union Find
+params: nums
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n
+
+=== description
+Given an unsorted array of integers `nums`, return the length of the longest sequence of **consecutive** integers (like `4, 5, 6, 7`) that can be formed from its elements.
+
+Your algorithm must run in **O(n)** time.
+
+=== constraints
+- `0 <= nums.length <= 10^5`
+- `-10^9 <= nums[i] <= 10^9`
+
+=== hints
+- Put everything in a hash set.
+- Only start counting at numbers that begin a run, i.e. `x - 1` is not in the set. Why does that keep the total work linear?
+
+=== template
+class Solution {
+public:
+    int longestConsecutive(vector<int>& nums) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::longestConsecutive);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.ints(n, -n, n)); });
+}
+
+=== approach
+Insert all numbers into a hash set. A number `x` **starts** a run exactly when `x - 1` is not in the set. For each such start, count upward `x+1, x+2, ...` while the numbers exist.
+
+Every number is visited by at most one upward count (the one from its run's start), so the total work is O(n) even though there is a nested loop.
+
+=== solution
+class Solution {
+public:
+    int longestConsecutive(vector<int>& nums) {
+        unordered_set<int> s(nums.begin(), nums.end());
+        int best = 0;
+        for (int x : s) {
+            if (s.count(x - 1)) continue;      // not the start of a run
+            int len = 1;
+            while (s.count(x + len)) ++len;    // walk the run upward
+            best = max(best, len);
+        }
+        return best;
+    }
+};
+
+=== examples
+[100,4,200,1,3,2]
+> 4
+: The longest run is 1, 2, 3, 4.
+
+[0,3,7,2,5,8,4,6,0,1]
+> 9
+
+[1,0,1,2]
+> 3
+
+=== tests
+[]
+> ?
+
+[5]
+> ?
+
+[1,1,1]
+> ?
+
+[-1,-2,-3,10,11]
+> ?
+
+[1000000000,-1000000000]
+> ?
