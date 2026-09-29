@@ -1,6 +1,10 @@
 #include "judge/builder.hpp"
 
+#include <unistd.h>
+
 #include <chrono>
+#include <functional>
+#include <thread>
 
 #include "judge/process.hpp"
 #include "ui/term.hpp"
@@ -48,6 +52,12 @@ std::vector<std::string> c_flags(bool sanitize, bool count = false) {
     return f;
 }
 
+// Unique temporary suffix so concurrent builds never share a half-written file.
+std::string tmp_suffix() {
+    return ".tmp" + std::to_string(::getpid()) + "-" +
+           std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()) % 1000000);
+}
+
 bool is_gcc(const std::string &cxx) {
     std::string b = fs::basename(cxx);
     return b.find("g++") != std::string::npos && b.find("clang") == std::string::npos;
@@ -84,9 +94,10 @@ std::string Builder::counter_object(std::string &log) {
     if (fs::exists(obj)) return obj;
     fs::mkdirs(cfg_.build_dir);
     std::string out;
-    auto r = run_capture({cfg_.cc, "-O2", "-c", src, "-o", obj + ".tmp"}, out);
-    if (!r.ok()) { log += out; return ""; }
-    std::rename((obj + ".tmp").c_str(), obj.c_str());
+    std::string tmp = obj + tmp_suffix();
+    auto r = run_capture({cfg_.cc, "-O2", "-c", src, "-o", tmp}, out);
+    if (!r.ok()) { log += out; fs::remove(tmp); return ""; }
+    std::rename(tmp.c_str(), obj.c_str());
     return obj;
 }
 
@@ -103,14 +114,16 @@ std::string Builder::pch_dir(const std::vector<std::string> &flags, std::string 
     fs::write_file(hdr, content);
     std::vector<std::string> cmd = {cfg_.cxx};
     cmd.insert(cmd.end(), flags.begin(), flags.end());
-    cmd.insert(cmd.end(), {"-x", "c++-header", hdr, "-o", gch + ".tmp"});
+    std::string tmp = gch + tmp_suffix();
+    cmd.insert(cmd.end(), {"-x", "c++-header", hdr, "-o", tmp});
     std::string out;
     auto r = run_capture(cmd, out);
     if (!r.ok()) {
         log += out;
+        fs::remove(tmp);
         return cfg_.runtime_dir;  // fall back to no PCH
     }
-    std::rename((gch + ".tmp").c_str(), gch.c_str());
+    std::rename(tmp.c_str(), gch.c_str());
     return dir;
 }
 

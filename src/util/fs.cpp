@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <thread>
 
 #include "util/strings.hpp"
 
@@ -34,7 +35,8 @@ std::optional<std::string> read_file(const std::string &p) {
 
 bool write_file(const std::string &p, const std::string &content) {
     mkdirs(dirname(p));
-    std::string tmp = p + ".tmp" + std::to_string(::getpid());
+    std::string tmp = p + ".tmp" + std::to_string(::getpid()) + "-" +
+                      std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()) % 1000000);
     {
         std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
         if (!out) return false;
