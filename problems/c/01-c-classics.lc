@@ -1902,7 +1902,7 @@ LC_DRIVER {
         c.out(out);
     });
     h.gen([](lc::Gen &g, int n) {
-        n = std::max(1, n <= 40 ? g.irange(1, 5) : n);
+        n = std::max(1, n);
         std::vector<std::vector<int>> a(n), b(n);
         for (auto &r : a) r = g.ints(n, -10000, 10000);
         for (auto &r : b) r = g.ints(n, -10000, 10000);

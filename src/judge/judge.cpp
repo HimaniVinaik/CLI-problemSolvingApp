@@ -111,7 +111,16 @@ CaseResult Judge::run_case(const Problem &p, const std::string &bin, const std::
         auto pos = e.find("[judge] uncaught exception: ");
         cr.detail = pos != std::string::npos ? "uncaught exception: " + e.substr(pos + 28)
                                              : "program exited with code " + std::to_string(r.exit_code);
-        if (sanitize && e.find("Sanitizer") != std::string::npos) cr.detail = "sanitizer reported an error (see stderr)";
+        if (sanitize) {
+            // Surface the sanitizer's own one-line diagnosis (file:line: runtime error: ...).
+            for (auto &line : str::split_lines(str::strip_ansi(e))) {
+                if (line.find("runtime error:") != std::string::npos || line.find("ERROR: AddressSanitizer") != std::string::npos ||
+                    line.find("ERROR: LeakSanitizer") != std::string::npos) {
+                    cr.detail = str::trim(line);
+                    break;
+                }
+            }
+        }
         return cr;
     }
     cr.got = str::trim(fs::read_file(out).value_or(""));
