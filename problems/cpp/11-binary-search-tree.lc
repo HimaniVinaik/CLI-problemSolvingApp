@@ -1,0 +1,287 @@
+@@ category: Binary Search Tree
+
+@@@ problem 530 minimum-absolute-difference-in-bst
+title: Minimum Absolute Difference in BST
+difficulty: Easy
+topics: Tree, Depth-First Search, Binary Search Tree, Binary Tree
+params: root
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+Given the `root` of a **binary search tree**, return the minimum absolute difference between the values of any two different nodes.
+
+=== constraints
+- `2 <= number of nodes <= 10^4`
+- `0 <= Node.val <= 10^5`
+
+=== hints
+- An in-order traversal of a BST visits values in sorted order.
+- In a sorted sequence, the closest pair is always adjacent.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int getMinimumDifference(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::getMinimumDifference);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 2);
+        return lc::lines(g.bst(n, 0, std::max(100000LL, 8LL * n)));
+    });
+}
+
+=== approach
+**In-order traversal** of a BST produces the values in ascending order, and in a sorted list the minimum difference is between neighbours. So traverse in order, remembering the previously visited value, and track the smallest `current - previous`. No array of values is needed: memory is just the recursion stack, O(h).
+
+=== solution
+class Solution {
+    int prev = -1;           // previous value in in-order (-1 = none yet)
+    int best = INT_MAX;
+
+    void inorder(TreeNode *node) {
+        if (!node) return;
+        inorder(node->left);
+        if (prev >= 0) best = min(best, node->val - prev);   // neighbours in sorted order
+        prev = node->val;
+        inorder(node->right);
+    }
+
+public:
+    int getMinimumDifference(TreeNode* root) {
+        prev = -1;
+        best = INT_MAX;
+        inorder(root);
+        return best;
+    }
+};
+
+=== examples
+[4,2,6,1,3]
+> 1
+
+[1,0,48,null,null,12,49]
+> 1
+
+=== tests
+[1,null,3]
+> 2
+
+[100,50]
+> 50
+
+[236,104,701,null,227,null,911]
+> 9
+
+@@@ problem 230 kth-smallest-element-in-a-bst
+title: Kth Smallest Element in a BST
+difficulty: Medium
+topics: Tree, Depth-First Search, Binary Search Tree, Binary Tree
+params: root, k
+time: O(h + k)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes_(k_=_n/2)
+
+=== description
+Given the `root` of a binary search tree and an integer `k`, return the `k`-th smallest value (1-indexed) among all node values.
+
+Follow-up: if the tree is modified often and you need the k-th smallest frequently, how would you optimize?
+
+=== constraints
+- `1 <= k <= n <= 10^4`
+- `0 <= Node.val <= 10^4`
+
+=== hints
+- In-order traversal visits values in sorted order; stop after `k` nodes.
+- An iterative traversal with an explicit stack makes stopping early easy.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int kthSmallest(TreeNode* root, int k) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::kthSmallest);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        return lc::lines(g.bst(n, 0, std::max(10000LL, 4LL * n)), n > 40 ? n / 2 : g.irange(1, n));
+    });
+}
+
+=== approach
+Iterative **in-order traversal** with a stack: go left as far as possible pushing nodes, pop the smallest remaining node, count it, and continue with its right subtree. The `k`-th popped node is the answer. We stop immediately, so the work is O(h + k).
+
+For the follow-up, store subtree sizes in each node (an order-statistics tree) to answer in O(h).
+
+=== solution
+class Solution {
+public:
+    int kthSmallest(TreeNode* root, int k) {
+        vector<TreeNode*> st;
+        TreeNode *cur = root;
+        while (true) {
+            while (cur) { st.push_back(cur); cur = cur->left; }   // go to the smallest
+            cur = st.back(); st.pop_back();
+            if (--k == 0) return cur->val;                        // k-th in sorted order
+            cur = cur->right;
+        }
+    }
+};
+
+=== examples
+[3,1,4,null,2]
+1
+> 1
+
+[5,3,6,2,4,null,null,1]
+3
+> 3
+
+=== tests
+[1]
+1
+> 1
+
+[2,1,3]
+3
+> 3
+
+[5,3,6,2,4,null,null,1]
+6
+> 6
+
+@@@ problem 98 validate-binary-search-tree
+title: Validate Binary Search Tree
+difficulty: Medium
+topics: Tree, Depth-First Search, Binary Search Tree, Binary Tree
+params: root
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+Given the `root` of a binary tree, determine whether it is a valid **binary search tree**:
+
+- the left subtree of a node contains only values **strictly less** than the node's value;
+- the right subtree contains only values **strictly greater**;
+- both subtrees are also binary search trees.
+
+=== constraints
+- `1 <= number of nodes <= 10^4`
+- `-2^31 <= Node.val <= 2^31 - 1`
+
+=== hints
+- Checking only a node against its direct children is not enough: `[5,4,6,null,null,3,7]` is invalid.
+- Pass down the open interval `(low, high)` that the subtree's values must lie in. Use `long long` bounds so `INT_MIN` / `INT_MAX` values work.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    bool isValidBST(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isValidBST);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        bool extreme = g.coin(0.2);
+        TreeNode *t = extreme ? g.bst(n, INT_MIN, INT_MAX) : g.bst(n, -3 * n - 5, 3 * n + 5);
+        if (n <= 40 && !extreme && g.coin(0.5)) {      // break it somewhere
+            TreeNode *p = t;
+            while ((p->left || p->right) && g.coin(0.7)) p = (p->left && (g.coin() || !p->right)) ? p->left : p->right;
+            p->val += g.coin() ? g.irange(1, 6) : -g.irange(1, 6);
+        }
+        return lc::lines(t);
+    });
+}
+
+=== approach
+Every node must lie strictly inside an interval determined by its ancestors: going left tightens the upper bound to the parent's value, going right tightens the lower bound. Recurse with `(low, high)` starting from `(-∞, +∞)`. Using `long long` bounds (or null pointers) avoids trouble when node values equal `INT_MIN` or `INT_MAX`.
+
+=== solution
+class Solution {
+    bool valid(TreeNode *node, long long low, long long high) {
+        if (!node) return true;
+        if (node->val <= low || node->val >= high) return false;   // outside allowed interval
+        return valid(node->left, low, node->val)                   // left: values < node
+            && valid(node->right, node->val, high);                // right: values > node
+    }
+
+public:
+    bool isValidBST(TreeNode* root) {
+        return valid(root, LLONG_MIN, LLONG_MAX);
+    }
+};
+
+=== examples
+[2,1,3]
+> true
+
+[5,1,4,null,null,3,6]
+> false
+: The root is 5 but its right child is 4.
+
+=== tests
+[1]
+> true
+
+[1,1]
+> false
+
+[5,4,6,null,null,3,7]
+> false
+
+[2147483647]
+> true
+
+[-2147483648,null,2147483647]
+> true
+
+[3,1,5,0,2,4,6]
+> true

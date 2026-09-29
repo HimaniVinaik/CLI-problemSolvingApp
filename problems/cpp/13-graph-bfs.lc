@@ -1,0 +1,351 @@
+@@ category: Graph BFS
+
+@@@ problem 909 snakes-and-ladders
+title: Snakes and Ladders
+difficulty: Medium
+topics: Array, Breadth-First Search, Matrix
+params: board
+time: O(n²)
+space: O(n²)
+bench: n=64..1048576 time=n space=n unit=number_of_squares
+
+=== description
+The `n x n` `board` is numbered `1` to `n²` in a **boustrophedon** style: starting at the bottom-left, the bottom row goes left to right, the row above right to left, and so on alternating.
+
+You start on square `1`. Each move, you roll a die and go to a square `next` in `[curr + 1, min(curr + 6, n²)]`. If `next` holds a snake or ladder (`board[r][c] != -1`), you **must** move to its destination `board[r][c]`. You only follow one snake/ladder per move, even if the destination starts another one.
+
+Return the minimum number of moves to reach square `n²`, or `-1` if impossible. Squares `1` and `n²` never hold a snake or ladder.
+
+=== constraints
+- `2 <= n <= 20`
+- `board[i][j]` is `-1` or in `[1, n²]`
+
+=== hints
+- Every move costs 1, so BFS over squares gives the minimum number of moves.
+- Write a helper that converts a square number to `(row, col)`, taking the alternating direction into account.
+
+=== template
+class Solution {
+public:
+    int snakesAndLadders(vector<vector<int>>& board) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::snakesAndLadders);
+    h.gen([](lc::Gen &g, int cells) {
+        int n = std::max(2, (int)std::lround(std::sqrt((double)cells)));
+        int N = n * n;
+        std::vector<std::vector<int>> b(n, std::vector<int>(n, -1));
+        double p = n <= 6 ? 0.25 : 0.08;
+        for (int s = 2; s < N; ++s) {
+            if (!g.coin(p)) continue;
+            int r = (s - 1) / n, c = (s - 1) % n;
+            if (r % 2) c = n - 1 - c;
+            b[n - 1 - r][c] = g.irange(1, N);
+        }
+        return lc::lines(b);
+    });
+}
+
+=== approach
+Treat squares as graph nodes: from square `s` you can reach `s+1 .. s+6`, each redirected through its snake or ladder if present. All moves cost 1, so **BFS** from square 1 finds the fewest moves.
+
+The only fiddly part is mapping square `s` to board coordinates: its row from the bottom is `(s-1) / n`, its column is `(s-1) % n`, reversed on every other row, and the matrix row index is `n - 1 - rowFromBottom`.
+
+=== solution
+class Solution {
+public:
+    int snakesAndLadders(vector<vector<int>>& board) {
+        int n = board.size(), target = n * n;
+        auto cell = [&](int s) -> int& {            // square number -> board entry
+            int r = (s - 1) / n, c = (s - 1) % n;
+            if (r % 2 == 1) c = n - 1 - c;          // odd rows (from bottom) run right-to-left
+            return board[n - 1 - r][c];
+        };
+        vector<int> dist(target + 1, -1);
+        queue<int> q;
+        dist[1] = 0;
+        q.push(1);
+        while (!q.empty()) {
+            int s = q.front(); q.pop();
+            if (s == target) return dist[s];
+            for (int step = 1; step <= 6 && s + step <= target; ++step) {
+                int next = s + step;
+                if (cell(next) != -1) next = cell(next);   // forced snake or ladder
+                if (dist[next] == -1) {
+                    dist[next] = dist[s] + 1;
+                    q.push(next);
+                }
+            }
+        }
+        return -1;
+    }
+};
+
+=== examples
+[[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,35,-1,-1,13,-1],[-1,-1,-1,-1,-1,-1],[-1,15,-1,-1,-1,-1]]
+> 4
+: 1 → 2 (ladder to 15) → 17 (snake to 13) → 14 (ladder to 35) → 36.
+
+[[-1,-1],[-1,3]]
+> 1
+
+=== tests
+[[-1,-1],[-1,-1]]
+> 1
+
+[[-1,-1,-1],[-1,9,8],[-1,8,9]]
+> 1
+
+[[1,1,-1],[1,1,1],[-1,1,1]]
+> -1
+
+[[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,16,-1,-1]]
+> 1
+
+@@@ problem 433 minimum-genetic-mutation
+title: Minimum Genetic Mutation
+difficulty: Medium
+topics: Hash Table, String, Breadth-First Search
+params: startGene, endGene, bank
+time: O(B · L · 4)
+space: O(B)
+bench: n=64..32768 time=n space=n unit=bank_size_(L_=_8)
+
+=== description
+A gene is an 8-character string of `'A'`, `'C'`, `'G'` and `'T'`. A **mutation** changes exactly one character. Every intermediate gene must be in the gene `bank` to be valid (the start gene doesn't need to be).
+
+Return the minimum number of mutations to turn `startGene` into `endGene`, or `-1` if impossible.
+
+=== constraints
+- `0 <= bank.length <= 10`
+- `startGene.length == endGene.length == bank[i].length == 8`
+- all genes use only `'A'`, `'C'`, `'G'`, `'T'`
+
+=== hints
+- Genes are nodes; one mutation is an edge. Minimum number of edges: BFS.
+- Neighbours of a gene: try all 8 positions × 3 other letters, and keep those in the bank.
+
+=== template
+class Solution {
+public:
+    int minMutation(string startGene, string endGene, vector<string>& bank) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::minMutation);
+    h.gen([](lc::Gen &g, int n) {
+        std::string start = g.str(8, "ACGT");
+        std::set<std::string> bank;
+        std::string cur = start;
+        int path = n <= 40 ? g.irange(1, 6) : 40;
+        for (int k = 0; k < path; ++k) {             // a mutation path from start
+            cur[g.irange(0, 7)] = "ACGT"[g.irange(0, 3)];
+            bank.insert(cur);
+        }
+        std::string end = n <= 40 && g.coin(0.2) ? g.str(8, "ACGT") : cur;
+        while ((int)bank.size() < n) bank.insert(g.str(8, n <= 40 ? "AC" : "ACGT"));
+        std::vector<std::string> v(bank.begin(), bank.end());
+        if (n <= 40 && g.coin(0.2) && !v.empty()) v.erase(v.begin() + g.irange(0, (int)v.size() - 1));
+        g.shuffle(v);
+        return lc::lines(start, end, v);
+    });
+}
+
+=== approach
+**BFS over genes.** Put the bank into a hash set. Starting from `startGene`, generate each gene's neighbours by changing one of the 8 positions to one of the other 3 letters; a neighbour is usable only if it is in the bank and not yet visited (erase it from the set when visited). The BFS level at which `endGene` is reached is the minimum number of mutations.
+
+=== solution
+class Solution {
+public:
+    int minMutation(string startGene, string endGene, vector<string>& bank) {
+        unordered_set<string> unused(bank.begin(), bank.end());   // valid, not yet visited
+        if (!unused.count(endGene)) return -1;
+        queue<string> q;
+        q.push(startGene);
+        for (int steps = 0; !q.empty(); ++steps) {
+            for (int k = q.size(); k > 0; --k) {       // one BFS level
+                string gene = q.front(); q.pop();
+                if (gene == endGene) return steps;
+                for (int i = 0; i < 8; ++i) {
+                    char orig = gene[i];
+                    for (char c : string("ACGT")) {
+                        if (c == orig) continue;
+                        gene[i] = c;                   // one mutation
+                        if (unused.erase(gene)) q.push(gene);
+                    }
+                    gene[i] = orig;
+                }
+            }
+        }
+        return -1;
+    }
+};
+
+=== examples
+"AACCGGTT"
+"AACCGGTA"
+["AACCGGTA"]
+> 1
+
+"AACCGGTT"
+"AAACGGTA"
+["AACCGGTA","AACCGCTA","AAACGGTA"]
+> 2
+
+=== tests
+"AAAAACCC"
+"AACCCCCC"
+["AAAACCCC","AAACCCCC","AACCCCCC"]
+> 3
+
+"AACCGGTT"
+"AACCGGTA"
+[]
+> -1
+
+"AAAAAAAA"
+"CCCCCCCC"
+["AAAAAAAC","AAAAAACC","AAAAACCC","AAAACCCC","AAACCCCC","AACCCCCC","ACCCCCCC","CCCCCCCC"]
+> 8
+
+"AACCTTGG"
+"AATTCCGG"
+["AATTCCGG","AACCTGGG","AACCCCGG","AACCTACC"]
+> -1
+
+@@@ problem 127 word-ladder
+title: Word Ladder
+difficulty: Hard
+topics: Hash Table, String, Breadth-First Search
+params: beginWord, endWord, wordList
+time: O(N · L · 26)
+space: O(N · L)
+bench: n=64..65536 time=n space=n unit=wordList_size_(L_=_5)
+
+=== description
+A **transformation sequence** from `beginWord` to `endWord` is a sequence of words where each adjacent pair differs by exactly one letter, and every word after `beginWord` is in `wordList`.
+
+Return the **number of words** in the shortest transformation sequence (including both ends), or `0` if none exists.
+
+=== constraints
+- `1 <= beginWord.length <= 10`
+- `endWord.length == beginWord.length == wordList[i].length`
+- `1 <= wordList.length <= 5000`
+- all words are lowercase; `beginWord != endWord`; `wordList` has no duplicates
+
+=== hints
+- BFS on words; neighbours differ by one letter.
+- Generating neighbours by trying 26 letters at each position is faster than comparing against every word.
+
+=== template
+class Solution {
+public:
+    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::ladderLength);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        std::string alpha = n <= 40 ? "abc" : "abcdefghij";
+        int L = n <= 40 ? g.irange(1, 4) : 5;
+        std::string begin = g.str(L, alpha);
+        std::set<std::string> words;
+        std::string cur = begin;
+        for (int k = 0; k < (n <= 40 ? g.irange(1, 5) : 30); ++k) {
+            cur[g.irange(0, L - 1)] = alpha[g.irange(0, (int)alpha.size() - 1)];
+            if (cur != begin) words.insert(cur);
+        }
+        std::string end = cur == begin ? g.str(L, alpha) : cur;
+        if (end == begin) end[0] = end[0] == 'z' ? 'y' : 'z';
+        if (n > 40) end = std::string(L, 'z');   // benchmark: unreachable, explore everything
+        long long space = 1;
+        for (int i = 0; i < L; ++i) space *= alpha.size();
+        while ((long long)words.size() < std::min<long long>(n, space - 1)) words.insert(g.str(L, alpha));
+        words.erase(begin);
+        std::vector<std::string> v(words.begin(), words.end());
+        if (n <= 40 && g.coin(0.3)) v.push_back(end);
+        if (n > 40) v.push_back(end);
+        std::sort(v.begin(), v.end());
+        v.erase(std::unique(v.begin(), v.end()), v.end());
+        g.shuffle(v);
+        return lc::lines(begin, end, v);
+    });
+}
+
+=== approach
+**BFS from `beginWord`.** Keep the unused dictionary words in a hash set. For each word at the current level, generate every word that differs in one position (26 letters × L positions); each one still in the set is a new neighbour: remove it from the set (marking it visited) and enqueue it. The level at which `endWord` is dequeued, counting words, is the answer.
+
+Generating candidates costs O(L · 26) per word plus hashing O(L), independent of the dictionary size.
+
+=== solution
+class Solution {
+public:
+    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+        unordered_set<string> unused(wordList.begin(), wordList.end());
+        if (!unused.count(endWord)) return 0;
+        queue<string> q;
+        q.push(beginWord);
+        unused.erase(beginWord);
+        for (int length = 1; !q.empty(); ++length) {       // length = words in sequence so far
+            for (int k = q.size(); k > 0; --k) {
+                string word = q.front(); q.pop();
+                if (word == endWord) return length;
+                for (size_t i = 0; i < word.size(); ++i) {
+                    char orig = word[i];
+                    for (char c = 'a'; c <= 'z'; ++c) {
+                        if (c == orig) continue;
+                        word[i] = c;                         // change one letter
+                        if (unused.erase(word)) q.push(word);
+                    }
+                    word[i] = orig;
+                }
+            }
+        }
+        return 0;
+    }
+};
+
+=== examples
+"hit"
+"cog"
+["hot","dot","dog","lot","log","cog"]
+> 5
+: hit → hot → dot → dog → cog.
+
+"hit"
+"cog"
+["hot","dot","dog","lot","log"]
+> 0
+: "cog" is not in the word list.
+
+=== tests
+"a"
+"c"
+["a","b","c"]
+> 2
+
+"hot"
+"dog"
+["hot","dog"]
+> 0
+
+"hot"
+"dog"
+["hot","dog","dot"]
+> 3
+
+"red"
+"tax"
+["ted","tex","red","tax","tad","den","rex","pee"]
+> 4

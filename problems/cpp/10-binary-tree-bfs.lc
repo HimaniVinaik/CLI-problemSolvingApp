@@ -1,0 +1,362 @@
+@@ category: Binary Tree BFS
+
+@@@ problem 199 binary-tree-right-side-view
+title: Binary Tree Right Side View
+difficulty: Medium
+topics: Tree, Depth-First Search, Breadth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(w)
+bench: n=64..1048576 time=n space=n unit=number_of_nodes
+
+=== description
+Imagine standing on the **right side** of a binary tree. Return the values of the nodes you can see, ordered from top to bottom: the last node of every level.
+
+=== constraints
+- `0 <= number of nodes <= 100`
+- `-100 <= Node.val <= 100`
+
+=== hints
+- Level-order traversal: the last node processed on each level is visible.
+- Or DFS visiting the right child first: the first node you reach at each new depth is visible.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> rightSideView(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::rightSideView);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.tree(n, -100, 100)); });
+}
+
+=== approach
+**Breadth-first search** level by level with a queue. Before processing a level, note its size; the last node dequeued in that level is the rightmost one, so record its value. The queue holds at most one level at a time: O(w) memory, where w is the maximum width.
+
+=== solution
+class Solution {
+public:
+    vector<int> rightSideView(TreeNode* root) {
+        vector<int> view;
+        if (!root) return view;
+        queue<TreeNode*> q;
+        q.push(root);
+        while (!q.empty()) {
+            int size = q.size();                    // nodes on this level
+            for (int i = 0; i < size; ++i) {
+                TreeNode *node = q.front(); q.pop();
+                if (i == size - 1) view.push_back(node->val);   // rightmost on the level
+                if (node->left) q.push(node->left);
+                if (node->right) q.push(node->right);
+            }
+        }
+        return view;
+    }
+};
+
+=== examples
+[1,2,3,null,5,null,4]
+> [1,3,4]
+
+[1,2,3,4,null,null,null,5]
+> [1,3,4,5]
+: Node 5 is on the deepest level and is visible although it is on the left.
+
+[1,null,3]
+> [1,3]
+
+[]
+> []
+
+=== tests
+[1]
+> [1]
+
+[1,2]
+> [1,2]
+
+[1,2,3,4,5,6,7]
+> [1,3,7]
+
+@@@ problem 637 average-of-levels-in-binary-tree
+title: Average of Levels in Binary Tree
+difficulty: Easy
+topics: Tree, Depth-First Search, Breadth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(w)
+bench: n=64..1048576 time=n space=n unit=number_of_nodes
+
+=== description
+Given the `root` of a binary tree, return the **average value** of the nodes on each level, top to bottom. Answers within `10^-5` of the actual value are accepted.
+
+=== constraints
+- `1 <= number of nodes <= 10^4`
+- `-2^31 <= Node.val <= 2^31 - 1`
+
+=== hints
+- BFS level by level; sum each level in a 64-bit integer (or double) to avoid overflow.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<double> averageOfLevels(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::averageOfLevels);
+    h.gen([](lc::Gen &g, int n) {
+        return lc::lines(g.coin(0.2) ? g.tree(std::max(n, 1), INT_MIN, INT_MAX) : g.tree(std::max(n, 1), -1000, 1000));
+    });
+}
+
+=== approach
+Level-order traversal: for each level, add up its values in a **`long long`** (values can be as large as `2^31 - 1`, so an `int` sum would overflow), then divide by the number of nodes on that level.
+
+=== solution
+class Solution {
+public:
+    vector<double> averageOfLevels(TreeNode* root) {
+        vector<double> out;
+        queue<TreeNode*> q;
+        if (root) q.push(root);
+        while (!q.empty()) {
+            int size = q.size();
+            long long sum = 0;                 // 64-bit: avoids overflow
+            for (int i = 0; i < size; ++i) {
+                TreeNode *node = q.front(); q.pop();
+                sum += node->val;
+                if (node->left) q.push(node->left);
+                if (node->right) q.push(node->right);
+            }
+            out.push_back((double)sum / size);
+        }
+        return out;
+    }
+};
+
+=== examples
+[3,9,20,null,null,15,7]
+> [3.00000,14.50000,11.00000]
+: Level 0: 3. Level 1: (9 + 20) / 2 = 14.5. Level 2: (15 + 7) / 2 = 11.
+
+[3,9,20,15,7]
+> [3.00000,14.50000,11.00000]
+
+=== tests
+[1]
+> [1.00000]
+
+[2147483647,2147483647,2147483647]
+> [2147483647.00000,2147483647.00000]
+
+[-1,-2]
+> [-1.00000,-2.00000]
+
+@@@ problem 102 binary-tree-level-order-traversal
+title: Binary Tree Level Order Traversal
+difficulty: Medium
+topics: Tree, Breadth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=number_of_nodes
+
+=== description
+Given the `root` of a binary tree, return the **level order traversal** of its values: left to right, level by level, as a list of lists.
+
+=== constraints
+- `0 <= number of nodes <= 2000`
+- `-1000 <= Node.val <= 1000`
+
+=== hints
+- Use a queue. Record the queue size at the start of each level to know where the level ends.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::levelOrder);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.tree(n, -1000, 1000)); });
+}
+
+=== approach
+Standard **BFS**. The queue initially holds the root. At the start of each round, the queue contains exactly one level; pop that many nodes, collect their values into a new list, and push their children (which form the next level).
+
+=== solution
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        vector<vector<int>> levels;
+        queue<TreeNode*> q;
+        if (root) q.push(root);
+        while (!q.empty()) {
+            int size = q.size();              // exactly the current level
+            levels.emplace_back();
+            for (int i = 0; i < size; ++i) {
+                TreeNode *node = q.front(); q.pop();
+                levels.back().push_back(node->val);
+                if (node->left) q.push(node->left);
+                if (node->right) q.push(node->right);
+            }
+        }
+        return levels;
+    }
+};
+
+=== examples
+[3,9,20,null,null,15,7]
+> [[3],[9,20],[15,7]]
+
+[1]
+> [[1]]
+
+[]
+> []
+
+=== tests
+[1,2]
+> [[1],[2]]
+
+[1,null,2,null,3]
+> [[1],[2],[3]]
+
+[1,2,3,4,5,6,7]
+> [[1],[2,3],[4,5,6,7]]
+
+@@@ problem 103 binary-tree-zigzag-level-order-traversal
+title: Binary Tree Zigzag Level Order Traversal
+difficulty: Medium
+topics: Tree, Breadth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=number_of_nodes
+
+=== description
+Return the **zigzag** level order traversal of a binary tree: the first level left to right, the next right to left, and so on, alternating.
+
+=== constraints
+- `0 <= number of nodes <= 2000`
+- `-100 <= Node.val <= 100`
+
+=== hints
+- Do a normal level-order traversal, and reverse every second level (or fill it from the back).
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> zigzagLevelOrder(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::zigzagLevelOrder);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.tree(n, -100, 100)); });
+}
+
+=== approach
+Run a normal BFS by levels. For each level, create an array of the level's size and write the `i`-th dequeued value at index `i` on left-to-right levels, or at index `size - 1 - i` on right-to-left levels. The children are still enqueued left before right, so the next level's natural order is unchanged.
+
+=== solution
+class Solution {
+public:
+    vector<vector<int>> zigzagLevelOrder(TreeNode* root) {
+        vector<vector<int>> out;
+        queue<TreeNode*> q;
+        if (root) q.push(root);
+        bool leftToRight = true;
+        while (!q.empty()) {
+            int size = q.size();
+            vector<int> level(size);
+            for (int i = 0; i < size; ++i) {
+                TreeNode *node = q.front(); q.pop();
+                level[leftToRight ? i : size - 1 - i] = node->val;   // place according to direction
+                if (node->left) q.push(node->left);
+                if (node->right) q.push(node->right);
+            }
+            out.push_back(move(level));
+            leftToRight = !leftToRight;
+        }
+        return out;
+    }
+};
+
+=== examples
+[3,9,20,null,null,15,7]
+> [[3],[20,9],[15,7]]
+
+[1]
+> [[1]]
+
+[]
+> []
+
+=== tests
+[1,2,3,4,null,null,5]
+> [[1],[3,2],[4,5]]
+
+[1,2,3,4,5,6,7,8,9]
+> [[1],[3,2],[4,5,6,7],[9,8]]
+
+[1,2]
+> [[1],[2]]

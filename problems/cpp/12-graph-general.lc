@@ -1,0 +1,745 @@
+@@ category: Graph General
+
+@@@ problem 200 number-of-islands
+title: Number of Islands
+difficulty: Medium
+topics: Array, Depth-First Search, Breadth-First Search, Union Find, Matrix
+params: grid
+time: O(m · n)
+space: O(min(m, n))
+bench: n=64..1048576 time=n space=- unit=number_of_cells
+
+=== description
+Given an `m x n` grid of `'1'` (land) and `'0'` (water), return the number of **islands**. An island is a group of land cells connected **horizontally or vertically**, surrounded by water. Everything outside the grid is water.
+
+=== constraints
+- `1 <= m, n <= 300`
+- `grid[i][j]` is `'0'` or `'1'`
+
+=== hints
+- Scan the grid. Every time you find unvisited land, you've found a new island: flood-fill it so it isn't counted again.
+- You may mark visited land by overwriting it with `'0'`.
+
+=== template
+class Solution {
+public:
+    int numIslands(vector<vector<char>>& grid) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::numIslands);
+    h.gen([](lc::Gen &g, int n) {
+        int r = std::max(1, (int)std::sqrt((double)n) + g.irange(-2, 2)), c = std::max(1, n / r);
+        double p = g.real(0.3, 0.6);
+        std::vector<std::vector<char>> m(r, std::vector<char>(c));
+        for (auto &row : m) for (auto &x : row) x = g.coin(p) ? '1' : '0';
+        return lc::lines(m);
+    });
+}
+
+=== approach
+Scan all cells. When a `'1'` is found, count a new island and **flood-fill** it: a BFS from that cell visits every connected land cell and sinks it (sets it to `'0'`) so it will never be counted again. Each cell is enqueued at most once, so the total work is O(m · n).
+
+BFS is used instead of recursive DFS because a huge island would make a recursive DFS as deep as the island is large.
+
+=== solution
+class Solution {
+public:
+    int numIslands(vector<vector<char>>& grid) {
+        int m = grid.size(), n = grid[0].size(), islands = 0;
+        const int dr[] = {1, -1, 0, 0}, dc[] = {0, 0, 1, -1};
+        queue<pair<int, int>> q;
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (grid[i][j] != '1') continue;
+                ++islands;                       // new island found
+                grid[i][j] = '0';                // sink it while exploring
+                q.push({i, j});
+                while (!q.empty()) {
+                    auto [r, c] = q.front(); q.pop();
+                    for (int d = 0; d < 4; ++d) {
+                        int nr = r + dr[d], nc = c + dc[d];
+                        if (nr >= 0 && nr < m && nc >= 0 && nc < n && grid[nr][nc] == '1') {
+                            grid[nr][nc] = '0';
+                            q.push({nr, nc});
+                        }
+                    }
+                }
+            }
+        }
+        return islands;
+    }
+};
+
+=== examples
+[["1","1","1","1","0"],["1","1","0","1","0"],["1","1","0","0","0"],["0","0","0","0","0"]]
+> 1
+
+[["1","1","0","0","0"],["1","1","0","0","0"],["0","0","1","0","0"],["0","0","0","1","1"]]
+> 3
+
+=== tests
+[["0"]]
+> 0
+
+[["1"]]
+> 1
+
+[["1","0","1","0","1"]]
+> 3
+
+[["1","0"],["0","1"]]
+> 2
+
+[["1","1","1"],["0","1","0"],["1","1","1"]]
+> 1
+
+@@@ problem 130 surrounded-regions
+title: Surrounded Regions
+difficulty: Medium
+topics: Array, Depth-First Search, Breadth-First Search, Union Find, Matrix
+params: board
+time: O(m · n)
+space: O(m · n)
+bench: n=64..1048576 time=n space=- unit=number_of_cells
+
+=== description
+You are given an `m x n` board of `'X'` and `'O'`. A region of `'O'` cells (connected horizontally/vertically) is **surrounded** if none of its cells lies on the border of the board.
+
+Capture every surrounded region by flipping all its `'O'`s to `'X'`, **in place**.
+
+=== constraints
+- `1 <= m, n <= 200`
+- `board[i][j]` is `'X'` or `'O'`
+
+=== hints
+- It is easier to find the regions that are **not** surrounded: those connected to the border.
+- Mark every `'O'` reachable from a border `'O'`, then flip all unmarked `'O'`s.
+
+=== template
+class Solution {
+public:
+    void solve(vector<vector<char>>& board) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::solve).print_arg(0);
+    h.gen([](lc::Gen &g, int n) {
+        int r = std::max(1, (int)std::sqrt((double)n) + g.irange(-2, 2)), c = std::max(1, n / r);
+        std::vector<std::vector<char>> m(r, std::vector<char>(c));
+        for (auto &row : m) for (auto &x : row) x = g.coin(0.45) ? 'O' : 'X';
+        return lc::lines(m);
+    });
+}
+
+=== approach
+Reverse the question: an `'O'` survives exactly when it is connected to an `'O'` on the **border**. Start a BFS from every border `'O'`, marking reachable cells with a temporary `'#'`. Then sweep the board: remaining `'O'`s are surrounded and become `'X'`, and `'#'` cells go back to `'O'`.
+
+=== solution
+class Solution {
+public:
+    void solve(vector<vector<char>>& board) {
+        int m = board.size(), n = board[0].size();
+        queue<pair<int, int>> q;
+        auto seed = [&](int r, int c) {
+            if (board[r][c] == 'O') { board[r][c] = '#'; q.push({r, c}); }   // safe cell
+        };
+        for (int i = 0; i < m; ++i) { seed(i, 0); seed(i, n - 1); }        // left/right borders
+        for (int j = 0; j < n; ++j) { seed(0, j); seed(m - 1, j); }        // top/bottom borders
+
+        const int dr[] = {1, -1, 0, 0}, dc[] = {0, 0, 1, -1};
+        while (!q.empty()) {                                                // spread from the border
+            auto [r, c] = q.front(); q.pop();
+            for (int d = 0; d < 4; ++d) {
+                int nr = r + dr[d], nc = c + dc[d];
+                if (nr >= 0 && nr < m && nc >= 0 && nc < n) seed(nr, nc);
+            }
+        }
+        for (auto &row : board)
+            for (char &x : row) x = (x == '#') ? 'O' : 'X';                 // capture the rest
+    }
+};
+
+=== examples
+[["X","X","X","X"],["X","O","O","X"],["X","X","O","X"],["X","O","X","X"]]
+> [["X","X","X","X"],["X","X","X","X"],["X","X","X","X"],["X","O","X","X"]]
+: The bottom 'O' touches the border, so it is not captured.
+
+[["X"]]
+> [["X"]]
+
+=== tests
+[["O"]]
+> [["O"]]
+
+[["O","O"],["O","O"]]
+> [["O","O"],["O","O"]]
+
+[["X","X","X"],["X","O","X"],["X","X","X"]]
+> [["X","X","X"],["X","X","X"],["X","X","X"]]
+
+[["X","O","X","X"],["O","X","O","X"],["X","O","X","O"],["O","X","O","X"]]
+> [["X","O","X","X"],["O","X","X","X"],["X","X","X","O"],["O","X","O","X"]]
+
+@@@ problem 133 clone-graph
+title: Clone Graph
+difficulty: Medium
+topics: Hash Table, Depth-First Search, Breadth-First Search, Graph
+params: adjList
+time: O(V + E)
+space: O(V)
+bench: n=64..524288 time=n space=n unit=number_of_nodes_(about_2n_edges)
+
+=== description
+Given a reference to a node in a **connected undirected graph**, return a **deep copy** of the graph. Each node has a value `val` and a list of `neighbors`.
+
+In the input, node values are `1..n` and `adjList[i]` lists the neighbours of node `i + 1`; you receive the node with value 1 (or `null` for an empty graph). The judge checks that no node of your copy belongs to the original graph.
+
+=== constraints
+- `0 <= number of nodes <= 100`
+- `1 <= Node.val <= 100`, all values unique
+- no repeated edges and no self-loops; the graph is connected
+
+=== hints
+- Keep a hash map from original node to its copy; it doubles as the "visited" set.
+- Traverse (BFS or DFS); when you meet an unseen neighbour, create its copy before linking.
+
+=== template
+// Definition for a Node (keep this in your file).
+class Node {
+public:
+    int val;
+    vector<Node*> neighbors;
+    Node() {
+        val = 0;
+        neighbors = vector<Node*>();
+    }
+    Node(int _val) {
+        val = _val;
+        neighbors = vector<Node*>();
+    }
+    Node(int _val, vector<Node*> _neighbors) {
+        val = _val;
+        neighbors = _neighbors;
+    }
+};
+
+class Solution {
+public:
+    Node* cloneGraph(Node* node) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto adj = c.arg<std::vector<std::vector<int>>>();
+        int n = adj.size();
+        std::vector<Node *> nodes(n);
+        for (int i = 0; i < n; ++i) nodes[i] = new Node(i + 1);
+        for (int i = 0; i < n; ++i)
+            for (int v : adj[i]) {
+                if (v < 1 || v > n) throw lc::InputError("neighbour value out of range");
+                nodes[i]->neighbors.push_back(nodes[v - 1]);
+            }
+        Node *res = nullptr;
+        Solution s;
+        c.time([&] { res = s.cloneGraph(n ? nodes[0] : nullptr); });
+        std::unordered_set<Node *> orig(nodes.begin(), nodes.end());
+        std::map<int, Node *> byVal;
+        std::vector<Node *> q;
+        std::unordered_set<Node *> seen;
+        if (res) { q.push_back(res); seen.insert(res); }
+        for (size_t k = 0; k < q.size(); ++k) {
+            Node *x = q[k];
+            if (orig.count(x)) { c.out_text("\"not a deep copy: the copy contains original nodes\""); return; }
+            if (byVal.count(x->val)) { c.out_text("\"two copied nodes have the same value\""); return; }
+            byVal[x->val] = x;
+            for (Node *y : x->neighbors) if (y && seen.insert(y).second) q.push_back(y);
+        }
+        std::vector<std::vector<int>> out;
+        for (auto &[v, x] : byVal) {
+            std::vector<int> nb;
+            for (Node *y : x->neighbors) nb.push_back(y ? y->val : 0);
+            out.push_back(nb);
+        }
+        if ((int)out.size() != n) { c.out_text("\"the copy has " + std::to_string(out.size()) + " nodes\""); return; }
+        c.out(out);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        std::vector<std::set<int>> adj(n);
+        for (int i = 1; i < n; ++i) { int p = g.irange(0, i - 1); adj[i].insert(p); adj[p].insert(i); }
+        for (int k = 0; k < n && n > 2; ++k) {
+            int a = g.irange(0, n - 1), b = g.irange(0, n - 1);
+            if (a != b) { adj[a].insert(b); adj[b].insert(a); }
+        }
+        std::vector<std::vector<int>> out(n);
+        for (int i = 0; i < n; ++i) for (int v : adj[i]) out[i].push_back(v + 1);
+        return lc::lines(out);
+    });
+}
+
+=== approach
+Traverse the graph with **BFS** while keeping a hash map `copy` from original node to its clone. The map serves two purposes: it tells us which nodes have been discovered (so we never clone a node twice or loop forever on cycles), and it lets us wire up edges between clones.
+
+Start by cloning the given node. For every dequeued node, look at each neighbour: if it has no clone yet, create one and enqueue the neighbour; then append the neighbour's clone to the current clone's neighbour list (preserving order).
+
+=== solution
+// Definition for a Node.
+class Node {
+public:
+    int val;
+    vector<Node*> neighbors;
+    Node() {
+        val = 0;
+        neighbors = vector<Node*>();
+    }
+    Node(int _val) {
+        val = _val;
+        neighbors = vector<Node*>();
+    }
+    Node(int _val, vector<Node*> _neighbors) {
+        val = _val;
+        neighbors = _neighbors;
+    }
+};
+
+class Solution {
+public:
+    Node* cloneGraph(Node* node) {
+        if (!node) return nullptr;
+        unordered_map<Node*, Node*> copy;       // original -> clone (also "visited")
+        copy[node] = new Node(node->val);
+        queue<Node*> q;
+        q.push(node);
+        while (!q.empty()) {
+            Node *cur = q.front(); q.pop();
+            for (Node *nb : cur->neighbors) {
+                if (!copy.count(nb)) {          // first time we see this node
+                    copy[nb] = new Node(nb->val);
+                    q.push(nb);
+                }
+                copy[cur]->neighbors.push_back(copy[nb]);   // wire the cloned edge
+            }
+        }
+        return copy[node];
+    }
+};
+
+=== examples
+[[2,4],[1,3],[2,4],[1,3]]
+> [[2,4],[1,3],[2,4],[1,3]]
+: Four nodes in a square: 1-2, 2-3, 3-4, 4-1.
+
+[[]]
+> [[]]
+: A single node without neighbours.
+
+[]
+> []
+
+=== tests
+[[2],[1]]
+> [[2],[1]]
+
+[[2,3],[1,3],[1,2]]
+> [[2,3],[1,3],[1,2]]
+
+[[2,3,4,5],[1],[1],[1],[1]]
+> [[2,3,4,5],[1],[1],[1],[1]]
+
+@@@ problem 399 evaluate-division
+title: Evaluate Division
+difficulty: Medium
+topics: Array, String, Depth-First Search, Breadth-First Search, Union Find, Graph, Shortest Path
+params: equations, values, queries
+time: O((E + Q) · α(V))
+space: O(V)
+bench: n=64..16384 time=n space=n unit=equations_=_queries
+
+=== description
+You are given equations `equations[i] = [A_i, B_i]` with values `values[i]`, meaning `A_i / B_i = values[i]`. Each `A_i`, `B_i` is a variable name.
+
+Answer each query `[C_j, D_j]` with the value of `C_j / D_j`, or `-1.0` if it cannot be determined. A variable that never appears in any equation is undefined, so even `x / x` is `-1.0` for it.
+
+The input never contains contradictions and never divides by zero. Answers within `10^-5` are accepted.
+
+=== constraints
+- `1 <= equations.length <= 20`, `values.length == equations.length`
+- `0.0 < values[i] <= 20.0`
+- `1 <= queries.length <= 20`
+- variable names are 1-5 lowercase letters and digits
+
+=== hints
+- Model variables as nodes and each equation as two weighted edges `A → B (value)` and `B → A (1/value)`. A query is a path product.
+- For many queries: weighted **union-find**, storing each variable's ratio to its root.
+
+=== template
+class Solution {
+public:
+    vector<double> calcEquation(vector<vector<string>>& equations, vector<double>& values, vector<vector<string>>& queries) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::calcEquation);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        int vars = std::max(2, n + 1);
+        auto name = [&](int i) { return "v" + std::to_string(i); };
+        std::vector<double> w(vars);
+        for (auto &x : w) x = std::pow(2.0, g.irange(-3, 3)) * g.irange(1, 4);
+        std::vector<std::vector<std::string>> eq, qs;
+        std::vector<double> vals;
+        for (int i = 0; i < n; ++i) {
+            int a = g.irange(0, vars - 1), b = g.irange(0, vars - 1);
+            if (a == b) b = (a + 1) % vars;
+            if (n > 40) { a = i + 1; b = g.irange(std::max(0, i - 3), i); }   // long chains
+            eq.push_back({name(a), name(b)});
+            vals.push_back(w[a] / w[b]);
+        }
+        for (int i = 0; i < n; ++i) {
+            int a = g.irange(0, vars), b = g.irange(0, vars);
+            qs.push_back({a == vars ? "zz" : name(a), b == vars ? "zz" : name(b)});
+        }
+        return lc::lines(eq, vals, qs);
+    });
+}
+
+=== approach
+**Weighted union-find.** Each variable `x` stores a parent and `weight[x] = x / parent(x)`. With path compression, `find(x)` returns the root and updates `weight[x]` to `x / root`.
+
+- Equation `a / b = v`: find roots `ra`, `rb`. If different, attach `ra` under `rb` with `weight[ra] = v · weight[b] / weight[a]` (so that `a / b` comes out as `v`).
+- Query `c / d`: both must be known and share a root; then the answer is `weight[c] / weight[d]`.
+
+Every operation is almost O(1) (inverse Ackermann).
+
+=== solution
+class Solution {
+    unordered_map<string, string> parent;
+    unordered_map<string, double> weight;   // weight[x] = x / parent[x]
+
+    string find(const string &x) {
+        if (parent[x] == x) return x;
+        string p = parent[x];
+        string root = find(p);
+        weight[x] *= weight[p];             // x/root = x/p * p/root
+        parent[x] = root;                   // path compression
+        return root;
+    }
+
+    void add(const string &x) {
+        if (!parent.count(x)) { parent[x] = x; weight[x] = 1.0; }
+    }
+
+public:
+    vector<double> calcEquation(vector<vector<string>>& equations, vector<double>& values,
+                                vector<vector<string>>& queries) {
+        for (size_t i = 0; i < equations.size(); ++i) {
+            const string &a = equations[i][0], &b = equations[i][1];
+            add(a);
+            add(b);
+            string ra = find(a), rb = find(b);
+            if (ra != rb) {
+                parent[ra] = rb;
+                weight[ra] = values[i] * weight[b] / weight[a];   // keeps a/b == values[i]
+            }
+        }
+        vector<double> out;
+        for (auto &q : queries) {
+            const string &c = q[0], &d = q[1];
+            if (!parent.count(c) || !parent.count(d) || find(c) != find(d)) out.push_back(-1.0);
+            else out.push_back(weight[c] / weight[d]);
+        }
+        return out;
+    }
+};
+
+=== examples
+[["a","b"],["b","c"]]
+[2.0,3.0]
+[["a","c"],["b","a"],["a","e"],["a","a"],["x","x"]]
+> [6.00000,0.50000,-1.00000,1.00000,-1.00000]
+: a/b = 2 and b/c = 3, so a/c = 6 and b/a = 0.5. e and x are unknown.
+
+[["a","b"],["b","c"],["bc","cd"]]
+[1.5,2.5,5.0]
+[["a","c"],["c","b"],["bc","cd"],["cd","bc"]]
+> [3.75000,0.40000,5.00000,0.20000]
+
+[["a","b"]]
+[0.5]
+[["a","b"],["b","a"],["a","c"],["x","y"]]
+> [0.50000,2.00000,-1.00000,-1.00000]
+
+=== tests
+[["x1","x2"],["x2","x3"],["x3","x4"],["x4","x5"]]
+[3.0,4.0,5.0,6.0]
+[["x1","x5"],["x5","x2"],["x2","x4"],["x2","x2"],["x2","x9"],["x9","x9"]]
+> [360.00000,0.00833,20.00000,1.00000,-1.00000,-1.00000]
+
+[["a","b"],["c","d"]]
+[1.0,1.0]
+[["a","c"],["b","d"],["b","a"],["d","c"]]
+> [-1.00000,-1.00000,1.00000,1.00000]
+
+[["a","b"],["e","f"],["b","e"]]
+[3.4,1.4,2.3]
+[["b","a"],["a","f"],["f","f"],["e","e"],["c","c"],["a","c"],["f","e"]]
+> [0.29412,10.94800,1.00000,1.00000,-1.00000,-1.00000,0.71429]
+
+@@@ problem 207 course-schedule
+title: Course Schedule
+difficulty: Medium
+topics: Depth-First Search, Breadth-First Search, Graph, Topological Sort
+params: numCourses, prerequisites
+time: O(V + E)
+space: O(V + E)
+bench: n=64..1048576 time=n space=n unit=courses_(about_2n_prerequisites)
+
+=== description
+There are `numCourses` courses labelled `0` to `numCourses - 1`. `prerequisites[i] = [a, b]` means you must take course `b` before course `a`.
+
+Return `true` if you can finish all courses, i.e. the prerequisite graph has **no cycle**.
+
+=== constraints
+- `1 <= numCourses <= 2000`
+- `0 <= prerequisites.length <= 5000`
+- all pairs `[a, b]` are distinct
+
+=== hints
+- Courses with no remaining prerequisites can be taken now. Taking them may unlock others.
+- Kahn's algorithm: repeatedly remove nodes with in-degree 0. If you remove all of them, there's no cycle.
+
+=== template
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::canFinish);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        auto order = g.perm(n);                       // hidden topological order
+        std::set<std::pair<int, int>> edges;
+        int m = n <= 40 ? g.irange(0, 2 * n) : 2 * n;
+        for (int k = 0; k < m && n > 1; ++k) {
+            int i = g.irange(0, n - 2), j = g.irange(i + 1, std::min(n - 1, i + 8));
+            edges.insert({order[j], order[i]});      // order[i] before order[j]
+        }
+        if (n > 1 && (n <= 40 ? g.coin(0.4) : false)) {   // add a back edge -> cycle
+            int i = g.irange(0, n - 2), j = g.irange(i + 1, n - 1);
+            edges.insert({order[i], order[j]});
+            edges.insert({order[j], order[i]});
+        }
+        std::vector<std::vector<int>> pre;
+        for (auto &[a, b] : edges) pre.push_back({a, b});
+        g.shuffle(pre);
+        return lc::lines(n, pre);
+    });
+}
+
+=== approach
+**Kahn's algorithm (BFS topological sort).** Build adjacency lists `b → a` and count each course's in-degree (number of unmet prerequisites). Queue every course with in-degree 0. Repeatedly take a course from the queue, count it as finished, and decrement the in-degree of the courses that depend on it; any that drop to 0 join the queue.
+
+If a cycle exists, its courses never reach in-degree 0, so fewer than `numCourses` courses get finished.
+
+=== solution
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+        vector<vector<int>> next(numCourses);   // b -> courses that need b
+        vector<int> indeg(numCourses, 0);       // unmet prerequisites per course
+        for (auto &p : prerequisites) {
+            next[p[1]].push_back(p[0]);
+            indeg[p[0]]++;
+        }
+        queue<int> q;
+        for (int c = 0; c < numCourses; ++c)
+            if (indeg[c] == 0) q.push(c);
+        int done = 0;
+        while (!q.empty()) {
+            int c = q.front(); q.pop();
+            ++done;                              // take course c
+            for (int d : next[c])
+                if (--indeg[d] == 0) q.push(d);  // d is now unlocked
+        }
+        return done == numCourses;               // all taken iff no cycle
+    }
+};
+
+=== examples
+2
+[[1,0]]
+> true
+: Take course 0, then course 1.
+
+2
+[[1,0],[0,1]]
+> false
+: Each course requires the other.
+
+=== tests
+1
+[]
+> true
+
+3
+[[0,1],[1,2],[2,0]]
+> false
+
+4
+[[1,0],[2,1],[3,2]]
+> true
+
+3
+[[1,0],[1,2],[0,1]]
+> false
+
+@@@ problem 210 course-schedule-ii
+title: Course Schedule II
+difficulty: Medium
+topics: Depth-First Search, Breadth-First Search, Graph, Topological Sort
+params: numCourses, prerequisites
+time: O(V + E)
+space: O(V + E)
+bench: n=64..1048576 time=n space=n unit=courses_(about_2n_prerequisites)
+
+=== description
+Same setup as Course Schedule: `numCourses` courses and pairs `[a, b]` meaning `b` must be taken before `a`.
+
+Return **an ordering** of courses that lets you finish them all. If several orderings exist, any of them is accepted. If it's impossible, return an empty array.
+
+The judge verifies your order and prints `"a valid order"` when it respects every prerequisite; otherwise it prints what you returned.
+
+=== constraints
+- `1 <= numCourses <= 2000`
+- `0 <= prerequisites.length <= numCourses * (numCourses - 1)`
+- all pairs are distinct, `a != b`
+
+=== hints
+- Kahn's algorithm produces an order as a side effect: the order in which courses leave the queue.
+
+=== template
+class Solution {
+public:
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        int n = c.arg<int>();
+        auto pre = c.arg<std::vector<std::vector<int>>>();
+        auto preCopy = pre;
+        std::vector<int> r;
+        Solution s;
+        c.time([&] { r = s.findOrder(n, pre); });
+        if (r.empty()) { c.out(r); return; }
+        std::vector<int> at(n, -1);
+        bool ok = (int)r.size() == n;
+        for (int i = 0; ok && i < n; ++i) {
+            if (r[i] < 0 || r[i] >= n || at[r[i]] != -1) ok = false;
+            else at[r[i]] = i;
+        }
+        for (auto &p : preCopy)
+            if (ok && at[p[1]] > at[p[0]]) ok = false;
+        if (ok) c.out_text("\"a valid order\"");
+        else c.out(r);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        auto order = g.perm(n);
+        std::set<std::pair<int, int>> edges;
+        int m = n <= 40 ? g.irange(0, 2 * n) : 2 * n;
+        for (int k = 0; k < m && n > 1; ++k) {
+            int i = g.irange(0, n - 2), j = g.irange(i + 1, std::min(n - 1, i + 8));
+            edges.insert({order[j], order[i]});
+        }
+        if (n > 1 && n <= 40 && g.coin(0.35)) {
+            int i = g.irange(0, n - 2), j = g.irange(i + 1, n - 1);
+            edges.insert({order[i], order[j]});
+            edges.insert({order[j], order[i]});
+        }
+        std::vector<std::vector<int>> pre;
+        for (auto &[a, b] : edges) pre.push_back({a, b});
+        g.shuffle(pre);
+        return lc::lines(n, pre);
+    });
+}
+
+=== approach
+Run **Kahn's algorithm** and record courses in the order they leave the queue. A course enters the queue only when all its prerequisites have already been output, so that sequence is a valid order. If fewer than `numCourses` courses were output, a cycle blocked the rest: return an empty array.
+
+=== solution
+class Solution {
+public:
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+        vector<vector<int>> next(numCourses);
+        vector<int> indeg(numCourses, 0);
+        for (auto &p : prerequisites) {
+            next[p[1]].push_back(p[0]);
+            indeg[p[0]]++;
+        }
+        queue<int> q;
+        for (int c = 0; c < numCourses; ++c)
+            if (indeg[c] == 0) q.push(c);
+        vector<int> order;
+        while (!q.empty()) {
+            int c = q.front(); q.pop();
+            order.push_back(c);                  // all prerequisites of c are already in order
+            for (int d : next[c])
+                if (--indeg[d] == 0) q.push(d);
+        }
+        if ((int)order.size() != numCourses) return {};   // a cycle blocked some courses
+        return order;
+    }
+};
+
+=== examples
+2
+[[1,0]]
+> "a valid order"
+: [0,1] is the only valid order.
+
+4
+[[1,0],[2,0],[3,1],[3,2]]
+> "a valid order"
+: Both [0,1,2,3] and [0,2,1,3] are correct.
+
+1
+[]
+> "a valid order"
+
+2
+[[0,1],[1,0]]
+> []
+: Impossible: the two courses depend on each other.
+
+=== tests
+3
+[[1,0],[2,1],[0,2]]
+> []
+
+3
+[]
+> "a valid order"
+
+5
+[[1,0],[2,1],[3,2],[4,3]]
+> "a valid order"

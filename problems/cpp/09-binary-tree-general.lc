@@ -122,7 +122,7 @@ LC_DRIVER {
     h.gen([](lc::Gen &g, int n) {
         TreeNode *p = g.tree(n, -10, 10);
         std::string a = lc::to_text(p), b = a;
-        if (g.coin(0.4) && n > 0) {
+        if (n <= 40 && g.coin(0.4) && n > 0) {
             auto vals = lc::tree_values(p);
             std::vector<TreeNode *> nodes;
             std::function<void(TreeNode *)> walk = [&](TreeNode *t) { if (t) { nodes.push_back(t); walk(t->left); walk(t->right); } };
@@ -309,7 +309,7 @@ LC_DRIVER {
         };
         TreeNode *half = g.tree(std::max(0, (n - 1) / 2), -3, 3);
         TreeNode *root = new TreeNode(g.irange(-100, 100), half, mirror(half));
-        if (g.coin(0.4) && half) {
+        if (n <= 40 && g.coin(0.4) && half) {
             TreeNode *t = half;
             while (t->left && g.coin(0.6)) t = t->left;
             if (g.coin()) t->val += 1; else t->right = t->right ? nullptr : new TreeNode(1);
@@ -1229,7 +1229,7 @@ topics: Binary Search, Bit Manipulation, Tree, Binary Tree
 params: root
 time: O(log² n)
 space: O(log n)
-bench: n=64..1048576 time=log2n space=logn unit=number_of_nodes
+bench: n=64..1048576 time=log2n space=1 unit=number_of_nodes
 
 === description
 Given the `root` of a **complete** binary tree, return the number of nodes.

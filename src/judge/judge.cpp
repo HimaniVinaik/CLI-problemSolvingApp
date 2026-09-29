@@ -328,7 +328,7 @@ BenchReport Judge::bench(const Problem &p, const std::string &source, const std:
                          const std::function<void(const std::string &)> &status) {
     BenchReport br;
     if (!p.bench.enabled) {
-        br.skipped = "input size is fixed for this problem, so growth cannot be measured";
+        br.skipped = "this problem has no single growing input size to measure";
         return br;
     }
     if (ref_bin.empty()) {
