@@ -242,7 +242,7 @@ topics: Two Pointers, String, Dynamic Programming
 params: s
 time: O(n²)
 space: O(1)
-bench: n=64..8192 time=n^2 space=1 unit=s.length_(worst_case_"aaa…a")
+bench: n=64..8192 time=n^2 space=n unit=s.length_(worst_case_"aaa…a")
 
 === description
 Given a string `s`, return the **longest palindromic substring** in `s`.
@@ -345,7 +345,7 @@ topics: String, Dynamic Programming
 params: s1, s2, s3
 time: O(m · n)
 space: O(n)
-bench: n=16..2048 time=n^2 space=n unit=|s1|_=_|s2|
+bench: n=64..2048 time=n^2 space=n unit=|s1|_=_|s2|
 
 === description
 Given strings `s1`, `s2` and `s3`, determine whether `s3` is an **interleaving** of `s1` and `s2`: `s3` can be formed by merging the characters of `s1` and `s2` while keeping the order of characters from each string.
@@ -453,7 +453,7 @@ topics: String, Dynamic Programming
 params: word1, word2
 time: O(m · n)
 space: O(n)
-bench: n=16..2048 time=n^2 space=n unit=|word1|_=_|word2|
+bench: n=64..2048 time=n^2 space=n unit=|word1|_=_|word2|
 
 === description
 Given two strings `word1` and `word2`, return the minimum number of operations needed to convert `word1` into `word2`. The allowed operations are: **insert** a character, **delete** a character, **replace** a character.

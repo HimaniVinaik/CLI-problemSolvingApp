@@ -39,7 +39,7 @@ LC_DRIVER {
             if (g.coin(0.1)) s = std::string(len, '1');
             return s;
         };
-        return lc::lines(bin(std::max(n, 1)), bin(g.irange(1, std::max(n, 1))));
+        return lc::lines(bin(std::max(n, 1)), bin(n > 40 ? n : g.irange(1, std::max(n, 1))));
     });
 }
 

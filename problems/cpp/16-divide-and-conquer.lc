@@ -233,7 +233,7 @@ topics: Array, Divide and Conquer, Tree, Matrix
 params: grid
 time: O(n²)
 space: O(n²)
-bench: n=64..1048576 time=n space=n unit=number_of_cells
+bench: n=64..1048576 time=n space=- unit=number_of_cells
 
 === description
 Given an `n x n` grid of `0`s and `1`s (`n` is a power of two), build its **quad tree**. Each node has `val` and `isLeaf` and four children `topLeft`, `topRight`, `bottomLeft`, `bottomRight`:

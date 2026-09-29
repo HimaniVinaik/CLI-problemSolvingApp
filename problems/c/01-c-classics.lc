@@ -1,0 +1,1949 @@
+@@ category: C · Strings
+
+@@@ problem c1 reverse-string-in-place
+title: Reverse a String In Place
+difficulty: Easy
+topics: Strings, Pointers, Two Pointers
+params: s
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=strlen(s)
+
+=== description
+Write `void reverse_string(char *s)` that reverses the NUL-terminated string `s` **in place**. Do not allocate memory and do not use library functions other than (optionally) `strlen`.
+
+=== constraints
+- `0 <= strlen(s) <= 10^5`
+- `s` contains printable ASCII characters
+
+=== hints
+- Find the end of the string first (the character before `'\0'`).
+- Swap `*left` and `*right`, move the pointers toward each other, stop when they meet.
+
+=== template
+/* Reverse the NUL-terminated string s in place. */
+void reverse_string(char *s) {
+    /* your code here */
+}
+
+=== driver
+extern "C" void reverse_string(char *s);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string s = c.arg<std::string>();
+        std::vector<char> buf(s.begin(), s.end());
+        buf.push_back('\0');
+        c.time([&] { reverse_string(buf.data()); });
+        if (buf.back() != '\0') { c.out_text("\"string terminator was overwritten\""); return; }
+        c.out(std::string(buf.data()));
+    });
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.str(n, "abcdefgXYZ 012!")); });
+}
+
+=== approach
+Use two pointers: `left` at the first character and `right` at the last one (found by walking to the `'\0'`). Swap the characters they point to and move them toward each other until they meet. Every character moves once, and only one temporary `char` is needed.
+
+=== solution
+void reverse_string(char *s) {
+    if (s == NULL || *s == '\0') return;
+    char *left = s;
+    char *right = s;
+    while (*(right + 1) != '\0') right++;   /* right -> last character */
+    while (left < right) {
+        char tmp = *left;                   /* swap the two ends */
+        *left++ = *right;
+        *right-- = tmp;
+    }
+}
+
+=== examples
+"hello"
+> "olleh"
+
+"a b"
+> "b a"
+
+""
+> ""
+: The empty string stays empty.
+
+=== tests
+"x"
+> "x"
+
+"ab"
+> "ba"
+
+"racecar"
+> "racecar"
+
+"Hello, World!"
+> "!dlroW ,olleH"
+
+@@@ problem c2 string-length
+title: String Length (my_strlen)
+difficulty: Easy
+topics: Strings, Pointers
+params: s
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=strlen(s)
+
+=== description
+Implement `size_t my_strlen(const char *s)`, which returns the number of characters before the terminating `'\0'`, without calling `strlen`.
+
+Bonus: try the idiomatic pointer-difference version `end - s`.
+
+=== constraints
+- `0 <= length <= 10^6`
+
+=== hints
+- Walk a pointer until it points at `'\0'`; the answer is the distance travelled.
+
+=== template
+/* Return the length of s, not counting the terminating '\0'. */
+size_t my_strlen(const char *s) {
+    /* your code here */
+    return 0;
+}
+
+=== driver
+extern "C" size_t my_strlen(const char *s);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string s = c.arg<std::string>();
+        size_t r = 0;
+        c.time([&] { r = my_strlen(s.c_str()); });
+        c.out((long long)r);
+    });
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.str(n, "abc xyz")); });
+}
+
+=== approach
+Advance a pointer `p` from `s` until `*p == '\0'`. Pointer subtraction `p - s` then gives the number of characters passed, which is the length.
+
+=== solution
+size_t my_strlen(const char *s) {
+    const char *p = s;
+    while (*p != '\0') p++;     /* stop at the terminator */
+    return (size_t)(p - s);     /* distance travelled */
+}
+
+=== examples
+"hello"
+> 5
+
+""
+> 0
+
+=== tests
+"a"
+> 1
+
+"hello world"
+> 11
+
+"  "
+> 2
+
+@@@ problem c3 string-compare
+title: String Compare (my_strcmp)
+difficulty: Easy
+topics: Strings, Pointers
+params: a, b
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=common_prefix_length
+
+=== description
+Implement `int my_strcmp(const char *a, const char *b)` with the semantics of the standard `strcmp`: return a **negative** value if `a` sorts before `b`, **zero** if they are equal, and a **positive** value otherwise. Characters are compared as `unsigned char`.
+
+The judge prints the sign of your result: `-1`, `0` or `1`.
+
+=== constraints
+- `0 <= strlen(a), strlen(b) <= 10^5`
+- printable ASCII
+
+=== hints
+- Advance both pointers while the characters are equal and not `'\0'`.
+- The result is decided by the first differing characters (a shorter string compares as if it had `'\0'` there).
+
+=== template
+/* Compare two strings like strcmp: <0, 0 or >0. */
+int my_strcmp(const char *a, const char *b) {
+    /* your code here */
+    return 0;
+}
+
+=== driver
+extern "C" int my_strcmp(const char *a, const char *b);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string a = c.arg<std::string>(), b = c.arg<std::string>();
+        int r = 0;
+        c.time([&] { r = my_strcmp(a.c_str(), b.c_str()); });
+        c.out(r < 0 ? -1 : r > 0 ? 1 : 0);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        std::string a = g.str(n, "ab"), b = a;
+        int r = g.irange(0, 3);
+        if (n > 40) r = 0;                      // benchmark: equal strings, full scan
+        if (r == 1 && !b.empty()) b[g.irange(0, (int)b.size() - 1)] = 'c';
+        if (r == 2) b = b.substr(0, g.irange(0, (int)b.size()));
+        if (r == 3) b += "a";
+        return g.coin() ? lc::lines(a, b) : lc::lines(b, a);
+    });
+}
+
+=== approach
+Walk both strings together while the current characters are equal and not the terminator. Then return the difference of the current characters, **cast to `unsigned char`** first so that characters above 127 compare correctly. If both reached `'\0'` at the same time, the difference is 0.
+
+=== solution
+int my_strcmp(const char *a, const char *b) {
+    while (*a != '\0' && *a == *b) {   /* skip the common prefix */
+        a++;
+        b++;
+    }
+    /* first difference decides; '\0' sorts before any character */
+    return (int)(unsigned char)*a - (int)(unsigned char)*b;
+}
+
+=== examples
+"apple"
+"apple"
+> 0
+
+"apple"
+"apricot"
+> -1
+: 'p' < 'r' at index 2.
+
+"b"
+"a"
+> 1
+
+"app"
+"apple"
+> -1
+: A proper prefix sorts first.
+
+=== tests
+""
+""
+> 0
+
+""
+"a"
+> -1
+
+"Z"
+"a"
+> -1
+
+"abc"
+"ab"
+> 1
+
+@@@ problem c4 string-to-integer-atoi
+title: String to Integer (my_atoi)
+difficulty: Medium
+topics: Strings, Parsing, Overflow
+params: s
+time: O(n)
+space: O(1)
+bench: off
+
+=== description
+Implement `int my_atoi(const char *s)`, converting a string to a 32-bit signed integer:
+
+1. skip leading spaces (`' '`);
+2. read an optional `'+'` or `'-'`;
+3. read digits until a non-digit or the end of the string; leading zeros are fine;
+4. if no digits were read, the result is `0`;
+5. **clamp** out-of-range values to `INT_MIN` / `INT_MAX`.
+
+Avoid undefined behaviour: never let a signed `int` overflow while accumulating.
+
+=== constraints
+- `0 <= strlen(s) <= 200`
+- `s` contains letters, digits, `' '`, `'+'`, `'-'` and `'.'`
+
+=== hints
+- Before `result = result * 10 + digit`, check whether that would exceed `INT_MAX` (compare with `INT_MAX / 10` and `INT_MAX % 10`).
+- Or accumulate in a `long long` and stop once it passes `2^31`.
+
+=== template
+/* Parse a signed 32-bit integer, clamping on overflow. */
+int my_atoi(const char *s) {
+    /* your code here */
+    return 0;
+}
+
+=== driver
+extern "C" int my_atoi(const char *s);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string s = c.arg<std::string>();
+        int r = 0;
+        c.time([&] { r = my_atoi(s.c_str()); });
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int) {
+        std::string s(g.irange(0, 3), ' ');
+        int kind = g.irange(0, 5);
+        if (kind == 0) s += g.str(g.irange(0, 3), "+-");
+        else if (g.coin()) s += "+-"[g.irange(0, 1)];
+        if (kind == 1) s += std::string(g.irange(1, 4), '0');
+        s += g.str(g.irange(0, kind == 2 ? 14 : 8), "0123456789");
+        if (g.coin(0.4)) s += g.str(g.irange(1, 4), "ab .-1");
+        if (kind == 3) s = "words " + s;
+        return lc::lines(s);
+    });
+}
+
+=== approach
+Follow the rules step by step with a pointer: skip spaces, read one optional sign, then consume digits. Keep the magnitude in a `long long` accumulator; as soon as it exceeds `2^31` we know the result is clamped and can stop (this also keeps the accumulator from overflowing on very long digit strings). Finally apply the sign and clamp to `[INT_MIN, INT_MAX]`.
+
+=== solution
+int my_atoi(const char *s) {
+    while (*s == ' ') s++;                       /* 1) leading spaces */
+    int sign = 1;
+    if (*s == '+' || *s == '-') {                /* 2) optional sign */
+        if (*s == '-') sign = -1;
+        s++;
+    }
+    long long value = 0;
+    while (*s >= '0' && *s <= '9') {            /* 3) digits */
+        value = value * 10 + (*s - '0');
+        if (value > 2147483648LL) break;         /* already out of range: stop early */
+        s++;
+    }
+    value *= sign;
+    if (value > INT_MAX) return INT_MAX;         /* 5) clamp */
+    if (value < INT_MIN) return INT_MIN;
+    return (int)value;
+}
+
+=== examples
+"42"
+> 42
+
+"   -042"
+> -42
+: Spaces are skipped and leading zeros ignored.
+
+"1337c0d3"
+> 1337
+: Reading stops at the first non-digit.
+
+"0-1"
+> 0
+
+"words and 987"
+> 0
+: The first non-space character isn't a sign or digit.
+
+=== tests
+""
+> 0
+
+"-91283472332"
+> -2147483648
+
+"91283472332"
+> 2147483647
+
+"+-12"
+> 0
+
+"-2147483648"
+> -2147483648
+
+"2147483647"
+> 2147483647
+
+"   +0 123"
+> 0
+
+@@@ problem c5 integer-to-string-itoa
+title: Integer to String (int_to_str)
+difficulty: Medium
+topics: Strings, Math, Overflow
+params: value
+time: O(number of digits)
+space: O(1)
+bench: off
+
+=== description
+Implement `char *int_to_str(int value, char *buf)`, which writes the decimal representation of `value` into `buf` (NUL-terminated) and returns `buf`. `buf` has room for at least 12 characters.
+
+Watch out for `INT_MIN`: `-INT_MIN` does not fit in an `int`.
+
+=== constraints
+- `INT_MIN <= value <= INT_MAX`
+
+=== hints
+- Produce digits with `% 10` and `/ 10`: they come out in reverse order.
+- Work with an `unsigned` (or `long long`) magnitude so that `INT_MIN` is not a special case.
+
+=== template
+/* Write value in decimal into buf (at least 12 bytes) and return buf. */
+char *int_to_str(int value, char *buf) {
+    /* your code here */
+    return buf;
+}
+
+=== driver
+extern "C" char *int_to_str(int value, char *buf);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        int v = c.arg<int>();
+        char buf[32];
+        std::memset(buf, 'X', sizeof buf);
+        char *r = nullptr;
+        c.time([&] { r = int_to_str(v, buf); });
+        if (r != buf) { c.out_text("\"must return buf\""); return; }
+        if (!std::memchr(buf, '\0', 12)) { c.out_text("\"missing '\\\\0' within 12 bytes\""); return; }
+        c.out(std::string(buf));
+    });
+    h.gen([](lc::Gen &g, int) {
+        int k = g.irange(0, 3);
+        int v = k == 0 ? g.irange(-9, 9) : k == 1 ? g.irange(-100000, 100000) : g.irange(INT_MIN, INT_MAX);
+        return lc::lines(v);
+    });
+}
+
+=== approach
+Take the magnitude as an `unsigned int`: for negative values, `0u - (unsigned)value` is well defined and handles `INT_MIN` correctly. Emit digits with `% 10` into a small local buffer (they come out least-significant first), then copy them to `buf` in reverse order after an optional `'-'`, and terminate the string.
+
+=== solution
+char *int_to_str(int value, char *buf) {
+    unsigned int mag = value < 0 ? 0u - (unsigned int)value : (unsigned int)value;  /* safe for INT_MIN */
+    char tmp[12];
+    int n = 0;
+    do {                                   /* do-while so that 0 prints "0" */
+        tmp[n++] = (char)('0' + mag % 10);
+        mag /= 10;
+    } while (mag > 0);
+
+    char *p = buf;
+    if (value < 0) *p++ = '-';
+    while (n > 0) *p++ = tmp[--n];         /* digits were produced in reverse */
+    *p = '\0';
+    return buf;
+}
+
+=== examples
+123
+> "123"
+
+-45
+> "-45"
+
+0
+> "0"
+
+=== tests
+-2147483648
+> "-2147483648"
+
+2147483647
+> "2147483647"
+
+-1
+> "-1"
+
+1000
+> "1000"
+
+@@@ problem c6 find-substring-strstr
+title: Find a Substring (my_strstr)
+difficulty: Medium
+topics: Strings, Pointers, String Matching
+params: haystack, needle
+time: O(n · m)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=strlen(haystack)_(short_needle)
+
+=== description
+Implement `int my_strstr(const char *haystack, const char *needle)`: return the index of the first occurrence of `needle` in `haystack`, or `-1` if there is none. An empty `needle` matches at index `0`.
+
+Do not call `strstr`, `strncmp` or `memcmp`.
+
+=== constraints
+- `0 <= strlen(haystack), strlen(needle) <= 10^5`
+
+=== hints
+- For every start position, compare characters until the needle ends (match) or a character differs.
+- You can stop early once fewer characters than `strlen(needle)` remain.
+
+=== template
+/* Index of the first occurrence of needle in haystack, or -1. */
+int my_strstr(const char *haystack, const char *needle) {
+    /* your code here */
+    return -1;
+}
+
+=== driver
+extern "C" int my_strstr(const char *haystack, const char *needle);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string a = c.arg<std::string>(), b = c.arg<std::string>();
+        int r = 0;
+        c.time([&] { r = my_strstr(a.c_str(), b.c_str()); });
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        std::string hay = g.lower(n, 3);
+        std::string nd = g.lower(g.irange(0, 4), 3);
+        if (n > 40) nd = "abcabd";                           // benchmark: short needle, not present
+        else if (g.coin(0.4) && n > 0) { int p = g.irange(0, n - 1); nd = hay.substr(p, g.irange(1, n - p)); }
+        return lc::lines(hay, nd);
+    });
+}
+
+=== approach
+The straightforward scan: for each start position `i`, compare `haystack[i + k]` with `needle[k]` for `k = 0, 1, ...`. If the needle's terminator is reached, `i` is the answer; if the haystack's terminator is reached first, no later start can fit either, so return `-1`. Worst case O(n · m), which is fine for short needles (KMP gives O(n + m)).
+
+=== solution
+int my_strstr(const char *haystack, const char *needle) {
+    if (*needle == '\0') return 0;                  /* empty needle matches at 0 */
+    for (int i = 0; haystack[i] != '\0'; i++) {
+        int k = 0;
+        while (needle[k] != '\0' && haystack[i + k] == needle[k]) k++;
+        if (needle[k] == '\0') return i;            /* whole needle matched */
+        if (haystack[i + k] == '\0') return -1;     /* ran out of haystack: no later match fits */
+    }
+    return -1;
+}
+
+=== examples
+"hello"
+"ll"
+> 2
+
+"aaaaa"
+"bba"
+> -1
+
+"abc"
+""
+> 0
+
+=== tests
+""
+""
+> 0
+
+""
+"a"
+> -1
+
+"mississippi"
+"issip"
+> 4
+
+"abc"
+"abcd"
+> -1
+
+@@@ problem c7 reverse-words-in-place
+title: Reverse the Words of a String In Place
+difficulty: Medium
+topics: Strings, Pointers, Two Pointers
+params: s
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=strlen(s)
+
+=== description
+Implement `void reverse_words(char *s)`, which reverses the **order of the words** in `s`, in place. Words are separated by **single spaces**, and there are no leading or trailing spaces. The letters inside each word keep their order.
+
+Use O(1) extra memory: no second buffer.
+
+=== constraints
+- `0 <= strlen(s) <= 10^5`
+- `s` consists of letters, digits and single spaces between words
+
+=== hints
+- Reverse the whole string. Now the words are in the right order but each word is backwards.
+- Then reverse each word individually.
+
+=== template
+/* Reverse the order of the space-separated words of s, in place. */
+void reverse_words(char *s) {
+    /* your code here */
+}
+
+=== driver
+extern "C" void reverse_words(char *s);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string s = c.arg<std::string>();
+        std::vector<char> buf(s.begin(), s.end());
+        buf.push_back('\0');
+        c.time([&] { reverse_words(buf.data()); });
+        c.out(std::string(buf.data()));
+    });
+    h.gen([](lc::Gen &g, int n) {
+        std::string s;
+        while ((int)s.size() < n) s += (s.empty() ? "" : " ") + g.str(g.irange(1, 6), "abcdefXYZ019");
+        return lc::lines(s);
+    });
+}
+
+=== approach
+Two reversals do the job:
+
+1. reverse the **entire** string: `"the sky is blue"` → `"eulb si yks eht"`. The words are now in reverse order, but each word is spelled backwards;
+2. reverse **each word** separately: `"blue is sky the"`.
+
+A helper that reverses the range `[lo, hi]` with two pointers is all you need. Every character is moved twice: O(n) time, O(1) space.
+
+=== solution
+static void reverse_range(char *lo, char *hi) {
+    while (lo < hi) {
+        char t = *lo;
+        *lo++ = *hi;
+        *hi-- = t;
+    }
+}
+
+void reverse_words(char *s) {
+    size_t n = strlen(s);
+    if (n == 0) return;
+    reverse_range(s, s + n - 1);              /* 1) reverse everything */
+    char *word = s;
+    for (char *p = s;; p++) {                 /* 2) fix each word */
+        if (*p == ' ' || *p == '\0') {
+            reverse_range(word, p - 1);
+            if (*p == '\0') break;
+            word = p + 1;
+        }
+    }
+}
+
+=== examples
+"the sky is blue"
+> "blue is sky the"
+
+"hello"
+> "hello"
+
+"a b"
+> "b a"
+
+=== tests
+""
+> ""
+
+"x y z"
+> "z y x"
+
+"C is fun 101"
+> "101 fun is C"
+
+@@@ problem c8 squeeze-characters
+title: Squeeze: Delete Characters
+difficulty: Medium
+topics: Strings, Two Pointers, Lookup Table
+params: s, remove
+time: O(n + m)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=strlen(s)
+
+=== description
+A classic from K&R: implement `void squeeze(char *s, const char *remove)`, which deletes **every** character of `s` that appears anywhere in `remove`, in place. The remaining characters keep their order.
+
+Aim for O(n + m) time: don't scan `remove` again for every character of `s`.
+
+=== constraints
+- `0 <= strlen(s) <= 10^5`, `0 <= strlen(remove) <= 128`
+- printable ASCII
+
+=== hints
+- Build a 256-entry lookup table: `kill[c]` is true if `c` appears in `remove`.
+- Then use a read pointer and a write pointer over `s`, and terminate the result with `'\0'`.
+
+=== template
+/* Delete from s every character that occurs in remove (in place). */
+void squeeze(char *s, const char *remove) {
+    /* your code here */
+}
+
+=== driver
+extern "C" void squeeze(char *s, const char *remove);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string s = c.arg<std::string>(), rm = c.arg<std::string>();
+        std::vector<char> buf(s.begin(), s.end());
+        buf.push_back('\0');
+        c.time([&] { squeeze(buf.data(), rm.c_str()); });
+        c.out(std::string(buf.data()));
+    });
+    h.gen([](lc::Gen &g, int n) {
+        return lc::lines(g.str(n, "abcdef .!ABC"), g.str(g.irange(0, 5), "aceB. "));
+    });
+}
+
+=== approach
+First mark the characters to delete in a lookup table of 256 flags (indexed by `unsigned char`). Then compact `s` with **two pointers**: `read` visits every character; characters not marked are copied to `write`, which only advances for kept characters. Finally write the terminator at `write`. Each string is scanned once.
+
+=== solution
+void squeeze(char *s, const char *remove) {
+    bool kill[256] = {false};                       /* characters to delete */
+    for (const unsigned char *r = (const unsigned char *)remove; *r; r++) kill[*r] = true;
+
+    char *write = s;
+    for (const char *read = s; *read; read++) {
+        if (!kill[(unsigned char)*read]) *write++ = *read;   /* keep it */
+    }
+    *write = '\0';                                  /* new end of string */
+}
+
+=== examples
+"hello world"
+"lo"
+> "he wrd"
+
+"abc"
+""
+> "abc"
+
+"aaaa"
+"a"
+> ""
+
+=== tests
+""
+"abc"
+> ""
+
+"The C Programming Language"
+"aeiou"
+> "Th C Prgrmmng Lngg"
+
+"a.b.c"
+"."
+> "abc"
+
+@@ category: C · Bits
+
+@@@ problem c9 count-set-bits
+title: Count Set Bits
+difficulty: Easy
+topics: Bit Manipulation
+params: x
+time: O(number of set bits)
+space: O(1)
+bench: off
+
+=== description
+Implement `int count_set_bits(uint32_t x)`, returning the number of `1` bits in `x`. Do not use `__builtin_popcount`.
+
+=== constraints
+- `0 <= x <= 2^32 - 1`
+
+=== hints
+- `x & (x - 1)` clears the lowest set bit (Kernighan's trick).
+
+=== template
+/* Number of 1 bits in x. */
+int count_set_bits(uint32_t x) {
+    /* your code here */
+    return 0;
+}
+
+=== driver
+extern "C" int count_set_bits(uint32_t x);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        uint32_t x = c.arg<uint32_t>();
+        int r = 0;
+        c.time([&] { r = count_set_bits(x); });
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int) { return lc::lines((uint32_t)g.range(0, 4294967295LL)); });
+}
+
+=== approach
+**Kernighan's trick**: `x & (x - 1)` removes the lowest set bit, because subtracting 1 flips that bit and all the zeros below it. Loop until `x` is 0; the number of iterations equals the number of set bits.
+
+=== solution
+int count_set_bits(uint32_t x) {
+    int count = 0;
+    while (x) {
+        x &= x - 1;     /* clear the lowest set bit */
+        count++;
+    }
+    return count;
+}
+
+=== examples
+11
+> 3
+: 11 = 0b1011.
+
+0
+> 0
+
+4294967295
+> 32
+
+=== tests
+1
+> 1
+
+2147483648
+> 1
+
+2863311530
+> 16
+
+@@@ problem c10 power-of-two
+title: Power of Two
+difficulty: Easy
+topics: Bit Manipulation
+params: x
+time: O(1)
+space: O(1)
+bench: off
+
+=== description
+Implement `bool is_power_of_two(uint64_t x)`: return `true` if `x` is `2^k` for some `k >= 0`. Use a constant number of operations: no loops.
+
+=== constraints
+- `0 <= x <= 2^64 - 1`
+
+=== hints
+- A power of two has exactly one set bit.
+- `x & (x - 1)` removes the lowest set bit. What is left for a power of two? Careful with `x = 0`.
+
+=== template
+/* true iff x is a power of two. */
+bool is_power_of_two(uint64_t x) {
+    /* your code here */
+    return false;
+}
+
+=== driver
+extern "C" bool is_power_of_two(uint64_t x);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        uint64_t x = c.arg<uint64_t>();
+        bool r = false;
+        c.time([&] { r = is_power_of_two(x); });
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int) {
+        uint64_t x = 1ULL << g.irange(0, 63);
+        int k = g.irange(0, 3);
+        if (k == 1) x += g.coin() ? 1 : -1;
+        if (k == 2) x = g.rng();
+        if (k == 3 && g.coin(0.2)) x = 0;
+        return lc::lines(x);
+    });
+}
+
+=== approach
+A power of two has **exactly one** set bit. `x & (x - 1)` clears the lowest set bit, so it is zero exactly when `x` had at most one set bit. Excluding `x == 0` (no set bits) leaves the powers of two.
+
+=== solution
+bool is_power_of_two(uint64_t x) {
+    return x != 0 && (x & (x - 1)) == 0;   /* exactly one bit set */
+}
+
+=== examples
+1
+> true
+: 2^0 = 1.
+
+16
+> true
+
+0
+> false
+
+6
+> false
+
+=== tests
+2
+> true
+
+3
+> false
+
+9223372036854775808
+> true
+
+18446744073709551615
+> false
+
+@@@ problem c11 swap-endianness
+title: Swap Byte Order (Endianness)
+difficulty: Easy
+topics: Bit Manipulation, Systems
+params: x
+time: O(1)
+space: O(1)
+bench: off
+
+=== description
+Implement `uint32_t swap_endian(uint32_t x)`, which reverses the order of the **four bytes** of `x` (e.g. to convert between little-endian and big-endian). `0x11223344` becomes `0x44332211`.
+
+Values are written in decimal in the tests. Do not use `__builtin_bswap32` or `htonl`.
+
+=== constraints
+- `0 <= x <= 2^32 - 1`
+
+=== hints
+- Extract each byte with a shift and the mask `0xFF`, then shift it to its mirrored position.
+
+=== template
+/* Reverse the byte order of x. */
+uint32_t swap_endian(uint32_t x) {
+    /* your code here */
+    return 0;
+}
+
+=== driver
+extern "C" uint32_t swap_endian(uint32_t x);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        uint32_t x = c.arg<uint32_t>();
+        uint32_t r = 0;
+        c.time([&] { r = swap_endian(x); });
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int) { return lc::lines((uint32_t)g.range(0, 4294967295LL)); });
+}
+
+=== approach
+Byte `i` (bits `8i .. 8i+7`) must move to byte `3 - i`. Isolate each byte with a mask and shift it: the lowest byte moves up 24 bits, the second up 8, the third down 8, and the top byte down 24. OR the four pieces together. Using `uint32_t` keeps all shifts well defined.
+
+=== solution
+uint32_t swap_endian(uint32_t x) {
+    return ((x & 0x000000FFu) << 24) |   /* byte 0 -> byte 3 */
+           ((x & 0x0000FF00u) << 8)  |   /* byte 1 -> byte 2 */
+           ((x & 0x00FF0000u) >> 8)  |   /* byte 2 -> byte 1 */
+           ((x & 0xFF000000u) >> 24);    /* byte 3 -> byte 0 */
+}
+
+=== examples
+287454020
+> 1144201745
+: 0x11223344 becomes 0x44332211.
+
+1
+> 16777216
+: 0x00000001 becomes 0x01000000.
+
+=== tests
+0
+> 0
+
+4294967295
+> 4294967295
+
+4278190080
+> 255
+
+@@@ problem c12 insert-bit-field
+title: Insert a Bit Field
+difficulty: Medium
+topics: Bit Manipulation, Masks
+params: x, pos, len, value
+time: O(1)
+space: O(1)
+bench: off
+
+=== description
+Implement `uint32_t set_bits(uint32_t x, int pos, int len, uint32_t value)`: replace the `len` bits of `x` starting at bit `pos` (bit 0 = least significant) with the **low `len` bits** of `value`, and return the result. All other bits of `x` stay unchanged.
+
+This is how hardware registers and packed bit fields are updated in C.
+
+=== constraints
+- `0 <= pos <= 31`, `1 <= len <= 32`, `pos + len <= 32`
+- `value` may have bits above `len` set: ignore them
+
+=== hints
+- Build a mask of `len` ones: careful, `1u << 32` is undefined behaviour in C.
+- Clear the field with `x & ~(mask << pos)`, then OR in `(value & mask) << pos`.
+
+=== template
+/* Replace bits [pos, pos+len) of x with the low len bits of value. */
+uint32_t set_bits(uint32_t x, int pos, int len, uint32_t value) {
+    /* your code here */
+    return x;
+}
+
+=== driver
+extern "C" uint32_t set_bits(uint32_t x, int pos, int len, uint32_t value);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        uint32_t x = c.arg<uint32_t>();
+        int pos = c.arg<int>(), len = c.arg<int>();
+        uint32_t v = c.arg<uint32_t>();
+        if (pos < 0 || len < 1 || pos + len > 32) throw lc::InputError("need 0 <= pos, 1 <= len, pos + len <= 32");
+        uint32_t r = 0;
+        c.time([&] { r = set_bits(x, pos, len, v); });
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int) {
+        int pos = g.irange(0, 31), len = g.irange(1, 32 - pos);
+        if (g.coin(0.1)) pos = 0, len = 32;
+        return lc::lines((uint32_t)g.range(0, 4294967295LL), pos, len, (uint32_t)g.range(0, 4294967295LL));
+    });
+}
+
+=== approach
+Make a mask of `len` one-bits. Since shifting a 32-bit value by 32 is undefined, handle `len == 32` separately (the mask is all ones), otherwise use `(1u << len) - 1`. Then:
+
+1. clear the field in `x`: `x & ~(mask << pos)`;
+2. place the new bits: `(value & mask) << pos` (masking first drops extra high bits of `value`);
+3. OR the two together.
+
+=== solution
+uint32_t set_bits(uint32_t x, int pos, int len, uint32_t value) {
+    uint32_t mask = (len >= 32) ? 0xFFFFFFFFu : ((1u << len) - 1u);   /* len ones; avoid 1u << 32 */
+    x &= ~(mask << pos);                     /* clear the field */
+    x |= (value & mask) << pos;              /* write the new bits */
+    return x;
+}
+
+=== examples
+0
+4
+4
+15
+> 240
+: Bits 4..7 become 1111: 0b11110000 = 240.
+
+255
+0
+4
+0
+> 240
+: The low four bits are cleared.
+
+1024
+2
+3
+13
+> 1044
+: Only the low 3 bits of 13 (101) are used: 1024 + 0b10100 = 1044.
+
+=== tests
+0
+0
+32
+4294967295
+> 4294967295
+
+4294967295
+31
+1
+0
+> 2147483647
+
+305419896
+8
+16
+43981
+> 313249144
+
+@@ category: C · Pointers & Memory
+
+@@@ problem c13 implement-memmove
+title: Implement memmove
+difficulty: Medium
+topics: Pointers, Memory, Overlapping Buffers
+params: buffer, dst, src, n
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=bytes_copied
+
+=== description
+Implement `void *my_memmove(void *dst, const void *src, size_t n)`: copy `n` bytes from `src` to `dst` and return `dst`. Unlike `memcpy`, the two regions **may overlap**, and the result must be as if the bytes were first copied to a temporary buffer.
+
+Do not call `memmove`, `memcpy` or allocate memory. The test gives a buffer and byte offsets: the judge calls `my_memmove(buf + dst, buf + src, n)` and prints the buffer afterwards.
+
+=== constraints
+- `0 <= n`, and both ranges lie inside the buffer
+- `0 <= buffer length <= 10^6`
+
+=== hints
+- If `dst` is before `src`, copying front-to-back is safe even when they overlap.
+- If `dst` is after `src` and they overlap, front-to-back would overwrite source bytes before reading them: copy back-to-front.
+
+=== template
+/* Copy n bytes from src to dst; the regions may overlap. Return dst. */
+void *my_memmove(void *dst, const void *src, size_t n) {
+    /* your code here */
+    return dst;
+}
+
+=== driver
+extern "C" void *my_memmove(void *dst, const void *src, size_t n);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        std::string s = c.arg<std::string>();
+        long long d = c.arg<long long>(), sr = c.arg<long long>(), n = c.arg<long long>();
+        if (d < 0 || sr < 0 || n < 0 || d + n > (long long)s.size() || sr + n > (long long)s.size())
+            throw lc::InputError("ranges must lie inside the buffer");
+        std::vector<char> buf(s.begin(), s.end());
+        buf.push_back('\0');
+        void *r = nullptr;
+        c.time([&] { r = my_memmove(buf.data() + d, buf.data() + sr, (size_t)n); });
+        if (r != buf.data() + d) { c.out_text("\"must return dst\""); return; }
+        c.out(std::string(buf.begin(), buf.end() - 1));
+    });
+    h.gen([](lc::Gen &g, int n) {
+        int len = std::max(n, 1);
+        std::string s = g.str(len, "abcdefghijklmnopqrstuvwxyz0123456789");
+        if (n > 40) {   // benchmark: large overlapping copy in the tricky direction
+            int cnt = len - len / 8;
+            return lc::lines(s, (long long)(len - cnt), 0LL, (long long)cnt);
+        }
+        int cnt = g.irange(0, len);
+        int d = g.irange(0, len - cnt), sr = g.irange(0, len - cnt);
+        return lc::lines(s, (long long)d, (long long)sr, (long long)cnt);
+    });
+}
+
+=== approach
+Treat both pointers as `unsigned char *` and pick the copy direction:
+
+- `dst < src` (or no overlap): copy **forward**. Each source byte is read before any write can reach it;
+- `dst > src`: copy **backward**, from the last byte to the first, so the overlapping tail of the source is read before it is overwritten.
+
+Comparing pointers into the same array is well defined, which is exactly the situation `memmove` is for.
+
+=== solution
+void *my_memmove(void *dst, const void *src, size_t n) {
+    unsigned char *d = (unsigned char *)dst;
+    const unsigned char *s = (const unsigned char *)src;
+    if (d == s || n == 0) return dst;
+    if (d < s) {
+        for (size_t i = 0; i < n; i++) d[i] = s[i];          /* forward: safe when dst is before src */
+    } else {
+        for (size_t i = n; i > 0; i--) d[i - 1] = s[i - 1];  /* backward: safe when dst is after src */
+    }
+    return dst;
+}
+
+=== examples
+"abcdefgh"
+2
+0
+4
+> "ababcdgh"
+: Copy "abcd" two positions to the right; the regions overlap.
+
+"abcdefgh"
+0
+2
+4
+> "cdefefgh"
+: Copy "cdef" two positions to the left.
+
+"hello"
+0
+0
+5
+> "hello"
+
+=== tests
+"abc"
+0
+0
+0
+> "abc"
+
+"abcdef"
+1
+0
+5
+> "aabcde"
+
+"abcdef"
+0
+1
+5
+> "bcdeff"
+
+"0123456789"
+7
+1
+3
+> "0123456123"
+
+@@@ problem c14 reverse-linked-list
+title: Reverse a Linked List
+difficulty: Easy
+topics: Linked List, Pointers
+params: head
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=number_of_nodes
+
+=== description
+Using the C definition
+
+```c
+struct ListNode {
+    int val;
+    struct ListNode *next;
+};
+```
+
+implement `struct ListNode *reverse_list(struct ListNode *head)`, which reverses the list by relinking the nodes (no new nodes, no copying of values) and returns the new head. The struct is already defined for you.
+
+=== constraints
+- `0 <= number of nodes <= 5000`
+- `-5000 <= val <= 5000`
+
+=== hints
+- Keep three pointers: `prev`, `cur` and `next`. Save `cur->next` before you overwrite it.
+
+=== template
+/*
+ * Already defined for you:
+ * struct ListNode {
+ *     int val;
+ *     struct ListNode *next;
+ * };
+ */
+struct ListNode *reverse_list(struct ListNode *head) {
+    /* your code here */
+    return head;
+}
+
+=== driver
+extern "C" ListNode *reverse_list(ListNode *head);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        ListNode *head = c.arg<ListNode *>();
+        ListNode *r = nullptr;
+        c.time([&] { r = reverse_list(head); });
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.ints(n, -5000, 5000)); });
+}
+
+=== approach
+Walk the list once, flipping each `next` pointer to point backwards. With `prev` (the already reversed part, initially `NULL`) and `cur`: save `next = cur->next`, set `cur->next = prev`, then advance `prev = cur`, `cur = next`. When `cur` becomes `NULL`, `prev` is the new head.
+
+=== solution
+struct ListNode *reverse_list(struct ListNode *head) {
+    struct ListNode *prev = NULL, *cur = head;
+    while (cur != NULL) {
+        struct ListNode *next = cur->next;   /* remember the rest */
+        cur->next = prev;                    /* flip the link */
+        prev = cur;
+        cur = next;
+    }
+    return prev;                             /* old tail is the new head */
+}
+
+=== examples
+[1,2,3,4,5]
+> [5,4,3,2,1]
+
+[1,2]
+> [2,1]
+
+[]
+> []
+
+=== tests
+[7]
+> [7]
+
+[1,1,2]
+> [2,1,1]
+
+@@@ problem c15 remove-nodes-and-free-them
+title: Remove Nodes and Free Them
+difficulty: Medium
+topics: Linked List, Pointers, Memory Management
+params: head, val
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=number_of_nodes
+
+=== description
+Implement `struct ListNode *remove_value(struct ListNode *head, int val)`: remove every node whose value equals `val` and return the new head.
+
+Every node of the list was allocated with `malloc`, and **you own the removed nodes**: each one must be released with `free`. The judge tracks the heap and reports a memory leak (or an extra `free`) as a wrong answer.
+
+=== constraints
+- `0 <= number of nodes <= 10^4`
+- `-100 <= val, Node.val <= 100`
+
+=== hints
+- A pointer-to-pointer (`struct ListNode **link`) that points at "the link leading to the current node" removes the special case for the head.
+- Save `node->next` before calling `free(node)`: reading freed memory is undefined behaviour.
+
+=== template
+/*
+ * Already defined for you:
+ * struct ListNode {
+ *     int val;
+ *     struct ListNode *next;
+ * };
+ * Every node was allocated with malloc; free the ones you remove.
+ */
+struct ListNode *remove_value(struct ListNode *head, int val) {
+    /* your code here */
+    return head;
+}
+
+=== driver
+extern "C" ListNode *remove_value(ListNode *head, int val);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto vals = c.arg<std::vector<int>>();
+        int val = c.arg<int>();
+        // allocate with malloc so the solution may free() the nodes
+        ListNode *head = nullptr, **tail = &head;
+        long long removedBytes = 0;
+        for (int v : vals) {
+            ListNode *nd = (ListNode *)std::malloc(sizeof(ListNode));
+            nd->val = v;
+            nd->next = nullptr;
+            *tail = nd;
+            tail = &nd->next;
+            if (v == val) removedBytes += (long long)malloc_usable_size(nd);
+        }
+        ListNode *r = nullptr;
+        c.time([&] { r = remove_value(head, val); });
+        long long freed = -lc::mem::cur;          // net bytes released during the call
+#ifndef LC_NO_TRACK
+        if (freed < removedBytes) { c.out_text("\"memory leak: removed nodes were not freed\""); return; }
+        if (freed > removedBytes) { c.out_text("\"freed more memory than the removed nodes\""); return; }
+#endif
+        (void)freed;
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        return lc::lines(g.ints(n, -3, 3), n > 40 ? 0 : g.irange(-4, 4));
+    });
+}
+
+=== approach
+Walk the list with a **pointer to the link** that leads to the current node: initially `&head`, later `&node->next`. If the node pointed to by `*link` must go, redirect the link past it (`*link = node->next`) and `free` the node; the link now points at the following node, so don't advance. Otherwise advance `link` to `&node->next`. This handles removing the head (or every node) without special cases, and the next pointer is read before `free`.
+
+=== solution
+struct ListNode *remove_value(struct ListNode *head, int val) {
+    struct ListNode **link = &head;              /* the pointer that leads to the current node */
+    while (*link != NULL) {
+        struct ListNode *node = *link;
+        if (node->val == val) {
+            *link = node->next;                  /* unlink first... */
+            free(node);                          /* ...then release it */
+        } else {
+            link = &node->next;                  /* keep it and move on */
+        }
+    }
+    return head;
+}
+
+=== examples
+[1,2,6,3,4,5,6]
+6
+> [1,2,3,4,5]
+
+[]
+1
+> []
+
+[7,7,7,7]
+7
+> []
+: Every node is removed, and all four are freed.
+
+=== tests
+[1]
+2
+> [1]
+
+[2,1,2]
+2
+> [1]
+
+[1,2,2,1]
+2
+> [1,1]
+
+@@@ problem c16 dynamic-array-stack
+title: Dynamic Array Stack
+difficulty: Medium
+topics: Design, Memory Management, Dynamic Array
+params: operations, arguments
+time: O(1) amortized per operation
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=number_of_operations
+
+=== description
+Implement a stack of `int`s backed by a **growable array** (like C++'s `vector`), managing the memory yourself:
+
+- `IntStack *stack_create(void)` allocates an empty stack;
+- `void stack_push(IntStack *st, int value)`: push, growing the array when it is full;
+- `int stack_pop(IntStack *st)`: remove and return the top value;
+- `int stack_peek(IntStack *st)`: return the top value;
+- `int stack_size(IntStack *st)`: number of elements;
+- `void stack_free(IntStack *st)`: release **all** memory owned by the stack.
+
+`pop` and `peek` are only called on non-empty stacks. After running the operations the judge calls `stack_free` and reports a leak if any memory is left.
+
+=== constraints
+- up to `10^6` operations
+- values fit in `int`
+
+=== hints
+- Double the capacity when the array is full (with `realloc`); that makes `push` O(1) amortized.
+- `stack_free` must free both the array and the struct.
+
+=== template
+typedef struct IntStack {
+    int *data;
+    int size;
+    int capacity;
+} IntStack;
+
+IntStack *stack_create(void) {
+    /* your code here */
+    return NULL;
+}
+
+void stack_push(IntStack *st, int value) {
+    /* your code here */
+}
+
+int stack_pop(IntStack *st) {
+    /* your code here */
+    return 0;
+}
+
+int stack_peek(IntStack *st) {
+    /* your code here */
+    return 0;
+}
+
+int stack_size(IntStack *st) {
+    /* your code here */
+    return 0;
+}
+
+void stack_free(IntStack *st) {
+    /* your code here */
+}
+
+=== driver
+struct IntStack;
+extern "C" {
+IntStack *stack_create(void);
+void stack_push(IntStack *st, int value);
+int stack_pop(IntStack *st);
+int stack_peek(IntStack *st);
+int stack_size(IntStack *st);
+void stack_free(IntStack *st);
+}
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        lc::Value ops = c.value(), args = c.value();
+        if (ops.a.size() != args.a.size() || ops.a.empty()) throw lc::InputError("operations and arguments differ in length");
+        std::vector<int> kind(ops.a.size()), val(ops.a.size(), 0);
+        for (size_t i = 1; i < ops.a.size(); ++i) {
+            std::string op = lc::Conv<std::string>::from(ops.a[i]);
+            kind[i] = op == "push" ? 0 : op == "pop" ? 1 : op == "peek" ? 2 : op == "size" ? 3 : -1;
+            if (kind[i] < 0) throw lc::InputError("unknown operation " + op);
+            if (kind[i] == 0) val[i] = lc::Conv<int>::from(args.a[i].a.at(0));
+        }
+        std::vector<long long> res(ops.a.size(), 0);
+        long long leaked = 0;
+        c.time([&] {
+            IntStack *st = stack_create();
+            for (size_t i = 1; i < kind.size(); ++i) {
+                switch (kind[i]) {
+                    case 0: stack_push(st, val[i]); break;
+                    case 1: res[i] = stack_pop(st); break;
+                    case 2: res[i] = stack_peek(st); break;
+                    default: res[i] = stack_size(st); break;
+                }
+            }
+            stack_free(st);
+            leaked = lc::mem::cur;
+        });
+        std::string o = "[null";
+        for (size_t i = 1; i < kind.size(); ++i) o += "," + (kind[i] == 0 ? std::string("null") : std::to_string(res[i]));
+#ifndef LC_NO_TRACK
+        if (leaked > 0) { c.out_text("\"memory leak: " + std::to_string(leaked) + " bytes still allocated after stack_free\""); return; }
+#endif
+        c.out_text(o + "]");
+    });
+    h.gen([](lc::Gen &g, int n) {
+        lc::Ops ops;
+        ops.add("IntStack");
+        int size = 0;
+        for (int i = 0; i < n; ++i) {
+            int r = g.irange(0, 9);
+            if (size == 0 || r < 5) { ops.add("push", g.irange(-1000000, 1000000)); ++size; }
+            else if (r < 7) { ops.add("pop"); --size; }
+            else if (r < 9) ops.add("peek");
+            else ops.add("size");
+        }
+        return ops.lines();
+    });
+}
+
+=== approach
+Store the elements in a heap array `data` with `size` used slots and `capacity` allocated slots.
+
+- `push`: if `size == capacity`, grow the array to **double** its capacity with `realloc` (starting from a small capacity). Doubling means the total copying over `n` pushes is at most `2n`, so each push is O(1) amortized.
+- `pop` / `peek`: read `data[size - 1]` (and decrement `size` for pop).
+- `stack_free`: free the array, then the struct: in that order, because the struct holds the pointer.
+
+=== solution
+typedef struct IntStack {
+    int *data;       /* heap array holding the elements */
+    int size;        /* number of elements in use */
+    int capacity;    /* number of allocated slots */
+} IntStack;
+
+IntStack *stack_create(void) {
+    IntStack *st = malloc(sizeof *st);
+    if (st == NULL) return NULL;
+    st->data = NULL;
+    st->size = 0;
+    st->capacity = 0;
+    return st;
+}
+
+void stack_push(IntStack *st, int value) {
+    if (st->size == st->capacity) {                      /* full: double the capacity */
+        int cap = st->capacity ? st->capacity * 2 : 8;
+        int *grown = realloc(st->data, (size_t)cap * sizeof *grown);
+        if (grown == NULL) return;                       /* out of memory: keep the old array */
+        st->data = grown;
+        st->capacity = cap;
+    }
+    st->data[st->size++] = value;
+}
+
+int stack_pop(IntStack *st) { return st->data[--st->size]; }
+
+int stack_peek(IntStack *st) { return st->data[st->size - 1]; }
+
+int stack_size(IntStack *st) { return st->size; }
+
+void stack_free(IntStack *st) {
+    if (st == NULL) return;
+    free(st->data);    /* the array first... */
+    free(st);          /* ...then the struct that points to it */
+}
+
+=== examples
+["IntStack","push","push","peek","size","pop","pop","size"]
+[[],[1],[2],[],[],[],[],[]]
+> [null,null,null,2,2,2,1,0]
+
+=== tests
+["IntStack","size"]
+[[],[]]
+> [null,0]
+
+["IntStack","push","push","push","push","push","push","push","push","push","push","size","pop","peek"]
+[[],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[],[],[]]
+> [null,null,null,null,null,null,null,null,null,null,null,10,10,9]
+
+["IntStack","push","pop","push","peek"]
+[[],[-2147483648],[],[2147483647],[]]
+> [null,null,-2147483648,null,2147483647]
+
+@@ category: C · Algorithms
+
+@@@ problem c17 binary-search
+title: Binary Search
+difficulty: Easy
+topics: Arrays, Binary Search, Pointers
+params: arr, target
+time: O(log n)
+space: O(1)
+bench: n=64..1048576 time=logn space=1 unit=n
+
+=== description
+Implement `int binary_search(const int *arr, int n, int target)`: `arr` holds `n` **distinct** integers in ascending order. Return the index of `target`, or `-1` if it is absent.
+
+In the tests the array is given as a list; the judge passes a pointer to its first element and its length.
+
+=== constraints
+- `0 <= n <= 10^6`
+- values fit in `int`
+
+=== hints
+- Keep a range `[lo, hi]` that must contain the target if it exists.
+- Compute the midpoint as `lo + (hi - lo) / 2` to avoid overflow.
+
+=== template
+/* Index of target in the sorted array arr[0..n-1], or -1. */
+int binary_search(const int *arr, int n, int target) {
+    /* your code here */
+    return -1;
+}
+
+=== driver
+extern "C" int binary_search(const int *arr, int n, int target);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto v = c.arg<std::vector<int>>();
+        int t = c.arg<int>();
+        int r = 0;
+        c.time([&] { r = binary_search(v.data(), (int)v.size(), t); });
+        c.out(r);
+    });
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        auto v = g.distinct(n, -3LL * n - 10, 3LL * n + 10);
+        std::sort(v.begin(), v.end());
+        int t = (!v.empty() && g.coin()) ? g.pick(v) : g.irange(-3 * n - 12, 3 * n + 12);
+        return lc::lines(v, t);
+    });
+}
+
+=== approach
+Maintain the closed range `[lo, hi]` in which the target could be. Look at the middle element: if it equals the target, done; if it is smaller, the target can only be to its right (`lo = mid + 1`); otherwise to its left (`hi = mid - 1`). The range halves each step, so at most about `log2(n) + 1` comparisons are made.
+
+=== solution
+int binary_search(const int *arr, int n, int target) {
+    int lo = 0, hi = n - 1;
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;       /* no overflow, unlike (lo + hi) / 2 */
+        if (arr[mid] == target) return mid;
+        if (arr[mid] < target) lo = mid + 1;
+        else hi = mid - 1;
+    }
+    return -1;
+}
+
+=== examples
+[-1,0,3,5,9,12]
+9
+> 4
+
+[-1,0,3,5,9,12]
+2
+> -1
+
+[]
+5
+> -1
+
+=== tests
+[5]
+5
+> 0
+
+[5]
+6
+> -1
+
+[1,2]
+1
+> 0
+
+[1,3,5,7,9,11,13]
+13
+> 6
+
+@@@ problem c18 sort-an-array
+title: Sort an Array (Quicksort)
+difficulty: Medium
+topics: Sorting, Divide and Conquer, Recursion
+params: arr
+time: O(n log n) average
+space: O(log n)
+bench: n=64..1048576 time=nlogn space=logn unit=n
+
+=== description
+Implement `void sort_array(int *arr, int n)`, which sorts the `n` integers of `arr` in ascending order, **in place**, in O(n log n) time. Do not call `qsort`.
+
+Quicksort is the classic choice; make sure already-sorted input and many duplicates don't make it quadratic.
+
+=== constraints
+- `0 <= n <= 10^6`
+- values fit in `int`
+
+=== hints
+- Choose the pivot at random (or median-of-three) so sorted input is not a worst case.
+- A three-way partition (`< pivot`, `== pivot`, `> pivot`) handles duplicates gracefully.
+- Recurse on the smaller part first and loop on the larger one to keep the stack O(log n).
+
+=== template
+/* Sort arr[0..n-1] in ascending order, in place. */
+void sort_array(int *arr, int n) {
+    /* your code here */
+}
+
+=== driver
+extern "C" void sort_array(int *arr, int n);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto v = c.arg<std::vector<int>>();
+        c.time([&] { sort_array(v.data(), (int)v.size()); });
+        c.out(v);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        int kind = g.irange(0, 3);
+        auto v = g.ints(n, kind == 3 ? -3 : -1000000000, kind == 3 ? 3 : 1000000000);
+        if (kind == 1) std::sort(v.begin(), v.end());
+        if (kind == 2) std::sort(v.rbegin(), v.rend());
+        return lc::lines(v);
+    });
+}
+
+=== approach
+**Quicksort with a random pivot and three-way partitioning.** Partition `arr[lo..hi]` into `< pivot`, `== pivot` and `> pivot` (Dutch national flag). The middle block is in its final place. Recurse into the **smaller** outer part and continue the loop with the larger one: that bounds the recursion depth by O(log n) even in bad cases.
+
+A random pivot makes the expected time O(n log n) for every input order, and the three-way partition keeps arrays full of duplicates fast.
+
+=== solution
+static unsigned int seed = 2463534242u;
+static unsigned int next_rand(void) {           /* xorshift PRNG */
+    seed ^= seed << 13;
+    seed ^= seed >> 17;
+    seed ^= seed << 5;
+    return seed;
+}
+
+static void swap_int(int *a, int *b) { int t = *a; *a = *b; *b = t; }
+
+static void quicksort(int *arr, int lo, int hi) {
+    while (lo < hi) {
+        int pivot = arr[lo + (int)(next_rand() % (unsigned int)(hi - lo + 1))];
+        /* [lo, lt) < pivot, [lt, i) == pivot, (gt, hi] > pivot */
+        int lt = lo, i = lo, gt = hi;
+        while (i <= gt) {
+            if (arr[i] < pivot) swap_int(&arr[i++], &arr[lt++]);
+            else if (arr[i] > pivot) swap_int(&arr[i], &arr[gt--]);
+            else i++;
+        }
+        /* recurse on the smaller side, loop on the larger one */
+        if (lt - lo < hi - gt) {
+            quicksort(arr, lo, lt - 1);
+            lo = gt + 1;
+        } else {
+            quicksort(arr, gt + 1, hi);
+            hi = lt - 1;
+        }
+    }
+}
+
+void sort_array(int *arr, int n) {
+    if (n > 1) quicksort(arr, 0, n - 1);
+}
+
+=== examples
+[5,2,3,1]
+> [1,2,3,5]
+
+[5,1,1,2,0,0]
+> [0,0,1,1,2,5]
+
+=== tests
+[]
+> []
+
+[1]
+> [1]
+
+[2,2,2,2]
+> [2,2,2,2]
+
+[-2147483648,2147483647,0,-1,1]
+> [-2147483648,-1,0,1,2147483647]
+
+@@@ problem c19 count-primes-sieve
+title: Count Primes (Sieve of Eratosthenes)
+difficulty: Medium
+topics: Math, Arrays, Memory Management
+params: n
+time: O(n log log n)
+space: O(n)
+bench: n=1024..16777216 time=n space=n unit=n
+
+=== description
+Implement `int count_primes(int n)`, returning the number of prime numbers **strictly less than** `n`.
+
+Use the **Sieve of Eratosthenes** with a heap-allocated array, and free it before returning (the judge reports leaks).
+
+=== constraints
+- `0 <= n <= 5 * 10^7`
+
+=== hints
+- Mark multiples of each prime `p` as composite, starting at `p * p` (smaller multiples were already marked).
+- You only need primes `p` with `p * p < n` for marking.
+- A `char` (or bit) per number keeps the memory small.
+
+=== template
+/* Number of primes p with p < n. */
+int count_primes(int n) {
+    /* your code here */
+    return 0;
+}
+
+=== driver
+extern "C" int count_primes(int n);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        int n = c.arg<int>();
+        int r = 0;
+        long long left = 0;
+        c.time([&] { r = count_primes(n); left = lc::mem::cur; });
+#ifndef LC_NO_TRACK
+        if (left > 0) { c.out_text("\"memory leak: " + std::to_string(left) + " bytes not freed\""); return; }
+#endif
+        c.out(r);
+    });
+    h.gen([](lc::Gen &g, int n) { return lc::lines(n > 40 ? n : g.irange(0, 200)); });
+}
+
+=== approach
+Allocate a byte array `composite[0..n-1]` initialized to zero. For each `p` from 2 while `p * p < n`: if `p` is not marked, it is prime, so mark `p*p, p*p + p, p*p + 2p, ...` as composite (smaller multiples have a smaller prime factor and are already marked). Finally count the unmarked numbers from 2 to `n - 1` and free the array.
+
+The total marking work is `n · (1/2 + 1/3 + 1/5 + ...)` = O(n log log n), practically linear.
+
+=== solution
+int count_primes(int n) {
+    if (n < 3) return 0;                         /* no primes below 2 */
+    char *composite = calloc((size_t)n, 1);      /* zeroed: everything "maybe prime" */
+    if (composite == NULL) return -1;
+    for (long long p = 2; p * p < n; p++) {
+        if (composite[p]) continue;              /* not a prime */
+        for (long long m = p * p; m < n; m += p) composite[m] = 1;
+    }
+    int count = 0;
+    for (int i = 2; i < n; i++)
+        if (!composite[i]) count++;
+    free(composite);                             /* no leaks */
+    return count;
+}
+
+=== examples
+10
+> 4
+: 2, 3, 5 and 7.
+
+0
+> 0
+
+1
+> 0
+
+=== tests
+2
+> 0
+
+3
+> 1
+
+100
+> 25
+
+1000000
+> 78498
+
+@@@ problem c20 matrix-multiplication
+title: Matrix Multiplication
+difficulty: Medium
+topics: Arrays, Pointers, Row-major Layout
+params: A, B
+time: O(n³)
+space: O(1)
+bench: n=8..256 time=n^3 space=1 unit=matrix_side_n
+
+=== description
+Implement `void mat_mul(const int *A, const int *B, long long *C, int n)`: multiply two `n x n` matrices stored in **row-major** order (element `(i, j)` is at index `i * n + j`) and write the product into `C`, which the caller has allocated.
+
+Use `long long` accumulation: products of two `int`s can overflow an `int`.
+
+Bonus: the loop order `i, k, j` walks memory sequentially and is much faster than `i, j, k` for large `n`.
+
+=== constraints
+- `1 <= n <= 256`
+- `-10^4 <= A[i], B[i] <= 10^4`
+
+=== hints
+- `C[i][j] = sum over k of A[i][k] * B[k][j]`.
+- With row-major storage, `A[i][k]` is `A[i * n + k]`.
+
+=== template
+/* C = A * B for n x n row-major matrices. C is allocated by the caller. */
+void mat_mul(const int *A, const int *B, long long *C, int n) {
+    /* your code here */
+}
+
+=== driver
+extern "C" void mat_mul(const int *A, const int *B, long long *C, int n);
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        auto a = c.arg<std::vector<std::vector<int>>>(), b = c.arg<std::vector<std::vector<int>>>();
+        int n = a.size();
+        if ((int)b.size() != n) throw lc::InputError("A and B must be square matrices of the same size");
+        std::vector<int> A, B;
+        for (auto &r : a) { if ((int)r.size() != n) throw lc::InputError("A must be square"); A.insert(A.end(), r.begin(), r.end()); }
+        for (auto &r : b) { if ((int)r.size() != n) throw lc::InputError("B must be square"); B.insert(B.end(), r.begin(), r.end()); }
+        std::vector<long long> C((size_t)n * n, 7777777);   // garbage: C must be fully written
+        c.time([&] { mat_mul(A.data(), B.data(), C.data(), n); });
+        std::vector<std::vector<long long>> out(n, std::vector<long long>(n));
+        for (int i = 0; i < n; ++i) for (int j = 0; j < n; ++j) out[i][j] = C[(size_t)i * n + j];
+        c.out(out);
+    });
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(1, n <= 40 ? g.irange(1, 5) : n);
+        std::vector<std::vector<int>> a(n), b(n);
+        for (auto &r : a) r = g.ints(n, -10000, 10000);
+        for (auto &r : b) r = g.ints(n, -10000, 10000);
+        return lc::lines(a, b);
+    });
+}
+
+=== approach
+First set every `C[i][j]` to 0 (the caller's buffer may contain garbage). Then accumulate `C[i][j] += A[i][k] * B[k][j]` using the **`i, k, j`** loop order: for fixed `i` and `k`, the inner loop walks row `k` of `B` and row `i` of `C` sequentially in memory, which is cache friendly, while `A[i][k]` stays in a register. Casting to `long long` before multiplying avoids `int` overflow.
+
+=== solution
+void mat_mul(const int *A, const int *B, long long *C, int n) {
+    for (int i = 0; i < n * n; i++) C[i] = 0;           /* output may contain garbage */
+    for (int i = 0; i < n; i++) {
+        for (int k = 0; k < n; k++) {
+            long long a = A[i * n + k];                 /* reused across the whole row */
+            const int *brow = &B[k * n];
+            long long *crow = &C[i * n];
+            for (int j = 0; j < n; j++) crow[j] += a * brow[j];   /* sequential access */
+        }
+    }
+}
+
+=== examples
+[[1,2],[3,4]]
+[[5,6],[7,8]]
+> [[19,22],[43,50]]
+
+[[2]]
+[[3]]
+> [[6]]
+
+=== tests
+[[1,0],[0,1]]
+[[9,8],[7,6]]
+> [[9,8],[7,6]]
+
+[[10000,10000],[10000,10000]]
+[[10000,10000],[10000,10000]]
+> [[200000000,200000000],[200000000,200000000]]
+
+[[1,2,3],[4,5,6],[7,8,9]]
+[[9,8,7],[6,5,4],[3,2,1]]
+> [[30,24,18],[84,69,54],[138,114,90]]

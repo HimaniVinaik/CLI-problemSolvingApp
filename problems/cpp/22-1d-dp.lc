@@ -336,7 +336,7 @@ topics: Array, Binary Search, Dynamic Programming
 params: nums
 time: O(n log n)
 space: O(n)
-bench: n=64..1048576 time=nlogn space=n
+bench: n=64..1048576 time=nlogn space=-
 
 === description
 Given an integer array `nums`, return the length of the longest **strictly increasing subsequence**.
