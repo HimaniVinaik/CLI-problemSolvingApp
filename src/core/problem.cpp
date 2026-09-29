@@ -29,7 +29,7 @@ size_t Problem::example_count() const {
 
 std::string complexity_label(const std::string &c) {
     static const std::map<std::string, std::string> names = {
-        {"1", "O(1)"},       {"logn", "O(log n)"}, {"sqrtn", "O(√n)"},  {"n", "O(n)"},
+        {"1", "O(1)"},       {"logn", "O(log n)"}, {"log2n", "O(log² n)"}, {"sqrtn", "O(√n)"},  {"n", "O(n)"},
         {"nlogn", "O(n log n)"}, {"n^2", "O(n²)"}, {"n^2logn", "O(n² log n)"}, {"n^3", "O(n³)"},
         {"2^n", "O(2ⁿ)"},    {"n!", "O(n!)"},       {"-", "—"}};
     auto it = names.find(c);

@@ -75,19 +75,19 @@ public:
 === tests
 "abc"
 "cba"
-> ?
+> true
 
 "z"
 "z"
-> ?
+> true
 
 "aab"
 "baa"
-> ?
+> true
 
 "fffbfg"
 "effjfggbffjdgbjjhhdegh"
-> ?
+> true
 
 @@@ problem 205 isomorphic-strings
 title: Isomorphic Strings
@@ -173,19 +173,19 @@ public:
 === tests
 "a"
 "a"
-> ?
+> true
 
 "ab"
 "aa"
-> ?
+> false
 
 "badc"
 "baba"
-> ?
+> false
 
 "13"
 "42"
-> ?
+> true
 
 @@@ problem 290 word-pattern
 title: Word Pattern
@@ -280,19 +280,19 @@ public:
 === tests
 "a"
 "dog"
-> ?
+> true
 
 "ab"
 "dog dog"
-> ?
+> false
 
 "aaa"
 "aa aa aa aa"
-> ?
+> false
 
 "abc"
 "b c a"
-> ?
+> true
 
 @@@ problem 242 valid-anagram
 title: Valid Anagram
@@ -332,6 +332,7 @@ LC_DRIVER {
         std::vector<char> v(s.begin(), s.end());
         g.shuffle(v);
         std::string t(v.begin(), v.end());
+        if (n > 40) return lc::lines(s, t);   // benchmark: true anagrams, full scan
         if (g.coin(0.4) && n > 0) t[g.irange(0, n - 1)] = 'a' + g.irange(0, 25);
         if (g.coin(0.1)) t += 'a';
         return lc::lines(s, t);
@@ -371,19 +372,19 @@ public:
 === tests
 "a"
 "a"
-> ?
+> true
 
 "a"
 "ab"
-> ?
+> false
 
 "aacc"
 "ccac"
-> ?
+> false
 
 "listen"
 "silent"
-> ?
+> true
 
 @@@ problem 49 group-anagrams
 title: Group Anagrams
@@ -459,13 +460,13 @@ public:
 
 === tests
 ["",""]
-> ?
+> [["",""]]
 
 ["abc","bca","cab","xyz","zyx","q"]
-> ?
+> [["abc","bca","cab"],["q"],["xyz","zyx"]]
 
 ["ab","ba","abc","a","b"]
-> ?
+> [["a"],["ab","ba"],["abc"],["b"]]
 
 @@@ problem 1 two-sum
 title: Two Sum
@@ -512,6 +513,7 @@ LC_DRIVER {
         for (auto &x : v) x = 4 * g.irange(-100000000, 100000000);
         int i = g.irange(0, n - 1), j = g.irange(0, n - 2);
         if (j >= i) ++j;
+        if (n > 40) { i = g.irange(0, n / 2); j = n - 1; }   // benchmark: answer found at the end
         v[i] += 1;
         v[j] += 2;
         return lc::lines(v, v[i] + v[j]);
@@ -554,23 +556,23 @@ public:
 === tests
 [1,5]
 6
-> ?
+> [0,1]
 
 [-3,4,3,90]
 0
-> ?
+> [0,2]
 
 [0,4,3,0]
 0
-> ?
+> [0,3]
 
 [-1,-2,-3,-4,-5]
 -8
-> ?
+> [2,4]
 
 [1000000000,-1000000000,5]
 5
-> ?
+> []
 
 @@@ problem 202 happy-number
 title: Happy Number
@@ -648,19 +650,19 @@ public:
 
 === tests
 1
-> ?
+> true
 
 7
-> ?
+> true
 
 4
-> ?
+> false
 
 2147483647
-> ?
+> false
 
 1111111
-> ?
+> true
 
 @@@ problem 219 contains-duplicate-ii
 title: Contains Duplicate II
@@ -737,19 +739,19 @@ public:
 === tests
 [1]
 0
-> ?
+> false
 
 [1,1]
 0
-> ?
+> false
 
 [99,99]
 2
-> ?
+> true
 
 [1,2,1]
 1
-> ?
+> false
 
 @@@ problem 128 longest-consecutive-sequence
 title: Longest Consecutive Sequence
@@ -821,16 +823,16 @@ public:
 
 === tests
 []
-> ?
+> 0
 
 [5]
-> ?
+> 1
 
 [1,1,1]
-> ?
+> 1
 
 [-1,-2,-3,10,11]
-> ?
+> 3
 
 [1000000000,-1000000000]
-> ?
+> 1

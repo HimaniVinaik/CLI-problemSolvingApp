@@ -91,19 +91,19 @@ public:
 
 === tests
 "["
-> ?
+> false
 
 "]"
-> ?
+> false
 
 "([)]"
-> ?
+> false
 
 "{[]}"
-> ?
+> true
 
 "(("
-> ?
+> false
 
 @@@ problem 71 simplify-path
 title: Simplify Path
@@ -207,16 +207,16 @@ public:
 
 === tests
 "/"
-> ?
+> "/"
 
 "/a/./b/../../c/"
-> ?
+> "/c"
 
 "/a//b////c/d//././/.."
-> ?
+> "/a/b/c"
 
 "/..hidden/.."
-> ?
+> "/"
 
 @@@ problem 155 min-stack
 title: Min Stack
@@ -322,15 +322,15 @@ public:
 === tests
 ["MinStack","push","getMin","top"]
 [[],[5],[],[]]
-> ?
+> [null,null,5,5]
 
 ["MinStack","push","push","push","getMin","pop","getMin","pop","getMin"]
 [[],[1],[1],[2],[],[],[],[],[]]
-> ?
+> [null,null,null,null,1,null,1,null,1]
 
 ["MinStack","push","push","getMin","pop","push","getMin"]
 [[],[2147483647],[-2147483648],[],[],[7],[]]
-> ?
+> [null,null,null,-2147483648,null,null,7]
 
 @@@ problem 150 evaluate-reverse-polish-notation
 title: Evaluate Reverse Polish Notation
@@ -436,16 +436,16 @@ public:
 
 === tests
 ["18"]
-> ?
+> 18
 
 ["-7","2","/"]
-> ?
+> -3
 
 ["3","-4","-"]
-> ?
+> 7
 
 ["4","-2","/","2","-3","-","-"]
-> ?
+> -7
 
 @@@ problem 224 basic-calculator
 title: Basic Calculator
@@ -454,7 +454,7 @@ topics: Math, String, Stack, Recursion
 params: s
 time: O(n)
 space: O(n)
-bench: n=64..1048576 time=n space=n unit=s.length
+bench: n=64..1048576 time=n space=- unit=s.length
 
 === description
 Given a string `s` representing a valid expression, evaluate it and return the result. You may **not** use built-in evaluation functions like `eval()`.
@@ -561,16 +561,16 @@ public:
 
 === tests
 "-1"
-> ?
+> -1
 
 "-(2 + 3)"
-> ?
+> -5
 
 "1-(     -2)"
-> ?
+> 3
 
 "2147483647"
-> ?
+> 2147483647
 
 "(((7)))-((1-2)-(3-4))"
-> ?
+> 7

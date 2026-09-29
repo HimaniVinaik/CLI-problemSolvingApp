@@ -83,19 +83,19 @@ public:
 
 === tests
 "a"
-> ?
+> true
 
 "ab"
-> ?
+> false
 
 "0P"
-> ?
+> false
 
 ".,"
-> ?
+> true
 
 "No 'x' in Nixon"
-> ?
+> true
 
 @@@ problem 392 is-subsequence
 title: Is Subsequence
@@ -135,6 +135,7 @@ LC_DRIVER {
     h.solve(&Solution::isSubsequence);
     h.gen([](lc::Gen &g, int n) {
         std::string t = g.lower(n, 4), s;
+        if (n > 40) return lc::lines(std::string("abcz"), t);   // benchmark: 'z' never occurs, full scan
         int m = std::min(n, std::max(0, g.irange(0, std::max(1, n / 4))));
         if (g.coin(0.6)) {  // a real subsequence
             for (int i = 0; i < n && (int)s.size() < m; ++i) if (g.coin((double)m / std::max(1, n))) s += t[i];
@@ -173,23 +174,23 @@ public:
 === tests
 ""
 ""
-> ?
+> true
 
 ""
 "abc"
-> ?
+> true
 
 "a"
 ""
-> ?
+> false
 
 "aaa"
 "aa"
-> ?
+> false
 
 "bb"
 "abcb"
-> ?
+> true
 
 @@@ problem 167 two-sum-ii-input-array-is-sorted
 title: Two Sum II - Input Array Is Sorted
@@ -283,19 +284,19 @@ public:
 === tests
 [1,2]
 3
-> ?
+> [1,2]
 
 [-5,-3,0,4,9]
 6
-> ?
+> [2,5]
 
 [0,0,3,4]
 0
-> ?
+> [1,2]
 
 [1,2,3,4,4,9,56,90]
 8
-> ?
+> [4,5]
 
 @@@ problem 11 container-with-most-water
 title: Container With Most Water
@@ -364,16 +365,16 @@ public:
 
 === tests
 [0,0]
-> ?
+> 0
 
 [4,3,2,1,4]
-> ?
+> 16
 
 [1,2,1]
-> ?
+> 2
 
 [2,3,10,5,7,8,9]
-> ?
+> 36
 
 @@@ problem 15 3sum
 title: 3Sum
@@ -411,7 +412,7 @@ LC_DRIVER {
     h.solve(&Solution::threeSum).sort_deep();
     h.gen([](lc::Gen &g, int n) {
         n = std::max(n, 3);
-        long long R = n <= 40 ? 6 : std::min<long long>(100000, (long long)n * 30);
+        long long R = n <= 40 ? 6 : (long long)n * n;   // benchmark: few triplets, O(n) output
         return lc::lines(g.ints(n, -R, R));
     });
 }
@@ -464,16 +465,16 @@ public:
 
 === tests
 [1,2,-3]
-> ?
+> [[-3,1,2]]
 
 [0,0,0,0]
-> ?
+> [[0,0,0]]
 
 [-2,0,1,1,2]
-> ?
+> [[-2,0,2],[-2,1,1]]
 
 [3,0,-2,-1,1,2]
-> ?
+> [[-2,-1,3],[-2,0,2],[-1,0,1]]
 
 [-4,-2,-2,-2,0,1,2,2,2,3,3,4,4,6,6]
-> ?
+> [[-4,-2,6],[-4,0,4],[-4,1,3],[-4,2,2],[-2,-2,4],[-2,0,2]]

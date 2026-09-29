@@ -12,6 +12,7 @@ double growth(const std::string &c, double n) {
     double lg = std::log2(std::max(n, 2.0));
     if (c == "1") return 1;
     if (c == "logn") return lg;
+    if (c == "log2n") return lg * lg;
     if (c == "sqrtn") return std::sqrt(n);
     if (c == "n") return n;
     if (c == "nlogn") return n * lg;
@@ -83,7 +84,7 @@ Model fit_absolute(const std::vector<std::pair<double, double>> &xy, const std::
 
 std::vector<std::string> candidates(bool small, double max_n) {
     if (small) return {"1", "n", "n^2", "n^3", "2^n", "n!"};
-    std::vector<std::string> c = {"1", "logn", "n", "nlogn", "n^2", "n^3"};
+    std::vector<std::string> c = {"1", "logn", "log2n", "n", "nlogn", "n^2", "n^3"};
     if (max_n <= 64) c.push_back("2^n");
     return c;
 }
@@ -91,7 +92,7 @@ std::vector<std::string> candidates(bool small, double max_n) {
 }  // namespace
 
 int class_rank(const std::string &c) {
-    static const std::map<std::string, int> r = {{"1", 0},    {"logn", 10},  {"sqrtn", 15},   {"n", 20},
+    static const std::map<std::string, int> r = {{"1", 0},    {"logn", 10},  {"log2n", 12},  {"sqrtn", 15},   {"n", 20},
                                                  {"nlogn", 30}, {"n^2", 40}, {"n^2logn", 45}, {"n^3", 50},
                                                  {"2^n", 60}, {"n!", 70}};
     auto it = r.find(c);
@@ -156,7 +157,7 @@ Fit fit_work(const std::vector<BenchPoint> &pts, bool small) {
 }
 
 Fit choose_time_class(const Fit &work, const Fit &wall, std::string &basis) {
-    static const std::vector<std::string> order = {"1", "logn", "n", "nlogn", "n^2", "n^3", "2^n", "n!"};
+    static const std::vector<std::string> order = {"1", "logn", "log2n", "n", "nlogn", "n^2", "n^3", "2^n", "n!"};
     auto idx = [&](const std::string &c) {
         auto it = std::find(order.begin(), order.end(), c);
         return it == order.end() ? -1 : (int)(it - order.begin());
@@ -212,7 +213,7 @@ Match compare_class(const std::string &expected, const std::string &estimated, b
     if (g <= e) return Match::Optimal;
     if (precise) return Match::Worse;
     auto pair_is = [&](const char *a, const char *b) { return expected == a && estimated == b; };
-    if (pair_is("1", "logn") || pair_is("n", "nlogn") || pair_is("n^2", "n^2logn") || pair_is("logn", "sqrtn"))
+    if (pair_is("1", "logn") || pair_is("n", "nlogn") || pair_is("n^2", "n^2logn") || pair_is("logn", "sqrtn") || pair_is("logn", "log2n"))
         return Match::Close;
     return Match::Worse;
 }

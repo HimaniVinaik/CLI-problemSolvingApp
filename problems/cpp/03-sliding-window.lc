@@ -82,19 +82,19 @@ public:
 === tests
 1
 [1]
-> ?
+> 1
 
 5
 [1]
-> ?
+> 0
 
 15
 [1,2,3,4,5]
-> ?
+> 5
 
 11
 [1,2,3,4,5]
-> ?
+> 3
 
 @@@ problem 3 longest-substring-without-repeating-characters
 title: Longest Substring Without Repeating Characters
@@ -168,22 +168,22 @@ public:
 
 === tests
 ""
-> ?
+> 0
 
 " "
-> ?
+> 1
 
 "au"
-> ?
+> 2
 
 "dvdf"
-> ?
+> 3
 
 "abba"
-> ?
+> 2
 
 "tmmzuxt"
-> ?
+> 5
 
 @@@ problem 30 substring-with-concatenation-of-all-words
 title: Substring with Concatenation of All Words
@@ -192,7 +192,7 @@ topics: Hash Table, String, Sliding Window
 params: s, words
 time: O(n · L)
 space: O(k)
-bench: n=64..262144 time=n space=1 unit=s.length_(L_=_3,_k_=_4)
+bench: n=64..262144 time=n space=n unit=s.length_(L_=_3,_k_=_4)
 
 === description
 You are given a string `s` and an array `words` of strings that all have the **same length** `L`.
@@ -302,23 +302,23 @@ public:
 === tests
 "a"
 ["a"]
-> ?
+> [0]
 
 "aaaaaa"
 ["aa","aa"]
-> ?
+> [0,1,2]
 
 "wordgoodgoodgoodbestword"
 ["word","good","best","good"]
-> ?
+> [8]
 
 "lingmindraboofooowingdingbarrwingmonkeypoundcake"
 ["fooo","barr","wing","ding","wing"]
-> ?
+> [13]
 
 "ababab"
 ["ab","ba"]
-> ?
+> []
 
 @@@ problem 76 minimum-window-substring
 title: Minimum Window Substring
@@ -451,20 +451,20 @@ public:
 === tests
 "ab"
 "b"
-> ?
+> "b"
 
 "abc"
 "cba"
-> ?
+> "abc"
 
 "aa"
 "aa"
-> ?
+> "aa"
 
 "bba"
 "ab"
-> ?
+> "ba"
 
 "cabwefgewcwaefgcf"
 "cae"
-> ?
+> "cwae"

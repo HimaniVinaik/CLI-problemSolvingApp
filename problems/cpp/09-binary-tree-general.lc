@@ -1,0 +1,1443 @@
+@@ category: Binary Tree General
+
+@@@ problem 104 maximum-depth-of-binary-tree
+title: Maximum Depth of Binary Tree
+difficulty: Easy
+topics: Tree, Depth-First Search, Breadth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes_(random_tree)
+
+=== description
+Given the `root` of a binary tree, return its **maximum depth**: the number of nodes on the longest path from the root down to a leaf.
+
+Trees are written in LeetCode's level-order format, where `null` marks a missing child: `[3,9,20,null,null,15,7]`.
+
+=== constraints
+- `0 <= number of nodes <= 10^4`
+- `-100 <= Node.val <= 100`
+
+=== hints
+- The depth of a tree is 1 + the larger depth of its two subtrees.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::maxDepth);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.tree(n, -100, 100)); });
+}
+
+=== approach
+Recursion mirrors the definition: an empty tree has depth 0; otherwise the depth is `1 + max(depth(left), depth(right))`. Every node is visited once. The recursion stack holds one frame per level on the current path, so the extra space is O(h), the height of the tree (O(log n) for balanced trees, O(n) for a chain).
+
+=== solution
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+        if (!root) return 0;                                  // empty tree
+        return 1 + max(maxDepth(root->left), maxDepth(root->right));
+    }
+};
+
+=== examples
+[3,9,20,null,null,15,7]
+> 3
+
+[1,null,2]
+> 2
+
+=== tests
+[]
+> 0
+
+[0]
+> 1
+
+[1,2,null,3,null,4,null,5]
+> 5
+
+[1,2,3,4,5,6,7]
+> 3
+
+@@@ problem 100 same-tree
+title: Same Tree
+difficulty: Easy
+topics: Tree, Depth-First Search, Binary Tree
+params: p, q
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+Given the roots of two binary trees `p` and `q`, return `true` if they are the **same**: structurally identical, with equal values in corresponding nodes.
+
+=== constraints
+- each tree has `0..100` nodes
+- `-10^4 <= Node.val <= 10^4`
+
+=== hints
+- Two trees are equal iff their roots are equal and both pairs of subtrees are equal.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isSameTree);
+    h.gen([](lc::Gen &g, int n) {
+        TreeNode *p = g.tree(n, -10, 10);
+        std::string a = lc::to_text(p), b = a;
+        if (g.coin(0.4) && n > 0) {
+            auto vals = lc::tree_values(p);
+            std::vector<TreeNode *> nodes;
+            std::function<void(TreeNode *)> walk = [&](TreeNode *t) { if (t) { nodes.push_back(t); walk(t->left); walk(t->right); } };
+            walk(p);
+            TreeNode *t = nodes[g.irange(0, (int)nodes.size() - 1)];
+            if (g.coin()) t->val += 1; else if (!t->left) t->left = new TreeNode(0); else t->left = nullptr;
+            b = lc::to_text(p);
+        }
+        return std::vector<std::string>{a, b};
+    });
+}
+
+=== approach
+Compare recursively: if both nodes are null the subtrees match; if exactly one is null, or the values differ, they don't. Otherwise both the left subtrees and the right subtrees must match. Short-circuit evaluation stops at the first difference.
+
+=== solution
+class Solution {
+public:
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+        if (!p || !q) return p == q;          // both empty -> same; one empty -> different
+        return p->val == q->val
+            && isSameTree(p->left, q->left)
+            && isSameTree(p->right, q->right);
+    }
+};
+
+=== examples
+[1,2,3]
+[1,2,3]
+> true
+
+[1,2]
+[1,null,2]
+> false
+
+[1,2,1]
+[1,1,2]
+> false
+
+=== tests
+[]
+[]
+> true
+
+[]
+[0]
+> false
+
+[5,4,null,3]
+[5,4,null,3]
+> true
+
+[5,4,null,3]
+[5,4,null,2]
+> false
+
+@@@ problem 226 invert-binary-tree
+title: Invert Binary Tree
+difficulty: Easy
+topics: Tree, Depth-First Search, Breadth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+Given the `root` of a binary tree, **invert** it (mirror it left-to-right) and return its root.
+
+=== constraints
+- `0 <= number of nodes <= 100`
+- `-100 <= Node.val <= 100`
+
+=== hints
+- Swap the children of every node. Order doesn't matter: pre-order, post-order or BFS all work.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* invertTree(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::invertTree);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.tree(n, -100, 100)); });
+}
+
+=== approach
+The mirror image of a tree is: the same root, with the **mirrored right subtree on the left** and the mirrored left subtree on the right. Recursively invert both subtrees and swap them. Each node is visited once; the stack depth is the tree height.
+
+=== solution
+class Solution {
+public:
+    TreeNode* invertTree(TreeNode* root) {
+        if (!root) return nullptr;
+        TreeNode *left = invertTree(root->left);     // mirror both sides...
+        TreeNode *right = invertTree(root->right);
+        root->left = right;                          // ...and swap them
+        root->right = left;
+        return root;
+    }
+};
+
+=== examples
+[4,2,7,1,3,6,9]
+> [4,7,2,9,6,3,1]
+
+[2,1,3]
+> [2,3,1]
+
+[]
+> []
+
+=== tests
+[1]
+> [1]
+
+[1,2]
+> [1,null,2]
+
+[1,null,2,null,3]
+> [1,2,null,3]
+
+@@@ problem 101 symmetric-tree
+title: Symmetric Tree
+difficulty: Easy
+topics: Tree, Depth-First Search, Breadth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+Given the `root` of a binary tree, check whether it is a **mirror of itself** (symmetric around its center).
+
+Follow-up: can you solve it both recursively and iteratively?
+
+=== constraints
+- `1 <= number of nodes <= 1000`
+- `-100 <= Node.val <= 100`
+
+=== hints
+- Symmetry is a relation between two subtrees: the left subtree must mirror the right one.
+- `mirror(a, b)`: values equal, `a.left` mirrors `b.right`, and `a.right` mirrors `b.left`.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    bool isSymmetric(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::isSymmetric);
+    h.gen([](lc::Gen &g, int n) {
+        std::function<TreeNode *(TreeNode *)> mirror = [&](TreeNode *t) -> TreeNode * {
+            return t ? new TreeNode(t->val, mirror(t->right), mirror(t->left)) : nullptr;
+        };
+        TreeNode *half = g.tree(std::max(0, (n - 1) / 2), -3, 3);
+        TreeNode *root = new TreeNode(g.irange(-100, 100), half, mirror(half));
+        if (g.coin(0.4) && half) {
+            TreeNode *t = half;
+            while (t->left && g.coin(0.6)) t = t->left;
+            if (g.coin()) t->val += 1; else t->right = t->right ? nullptr : new TreeNode(1);
+        }
+        return lc::lines(root);
+    });
+}
+
+=== approach
+Define `mirror(a, b)`: two subtrees are mirror images if both are empty, or both exist with equal values, `a->left` mirrors `b->right`, and `a->right` mirrors `b->left`. The tree is symmetric iff `mirror(root->left, root->right)`. An iterative version pushes the same pairs onto a queue.
+
+=== solution
+class Solution {
+    bool mirror(TreeNode *a, TreeNode *b) {
+        if (!a || !b) return a == b;            // both empty, or shape differs
+        return a->val == b->val
+            && mirror(a->left, b->right)        // outer pair
+            && mirror(a->right, b->left);       // inner pair
+    }
+
+public:
+    bool isSymmetric(TreeNode* root) {
+        return !root || mirror(root->left, root->right);
+    }
+};
+
+=== examples
+[1,2,2,3,4,4,3]
+> true
+
+[1,2,2,null,3,null,3]
+> false
+
+=== tests
+[1]
+> true
+
+[1,2,3]
+> false
+
+[1,2,2,2,null,2]
+> false
+
+[2,3,3,4,5,5,4,null,null,8,9,9,8]
+> true
+
+@@@ problem 105 construct-binary-tree-from-preorder-and-inorder-traversal
+title: Construct Binary Tree from Preorder and Inorder Traversal
+difficulty: Medium
+topics: Array, Hash Table, Divide and Conquer, Tree, Binary Tree
+params: preorder, inorder
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=number_of_nodes
+
+=== description
+Given the `preorder` and `inorder` traversals of a binary tree with **unique** values, reconstruct the tree and return its root.
+
+=== constraints
+- `1 <= preorder.length <= 3000`
+- `inorder.length == preorder.length`
+- `-3000 <= values <= 3000`, all values unique
+- both arrays are traversals of the same tree
+
+=== hints
+- The first preorder value is the root. Where is it in `inorder`? Everything to its left is the left subtree.
+- Use a hash map from value to inorder index to find the root in O(1).
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::buildTree);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        TreeNode *t = g.tree(n, 0, 0);
+        auto vals = g.distinct(n, -3 * n, 3 * n);
+        std::vector<int> pre, in;
+        size_t k = 0;
+        std::function<void(TreeNode *)> label = [&](TreeNode *x) { if (x) { x->val = vals[k++]; label(x->left); label(x->right); } };
+        std::function<void(TreeNode *)> po = [&](TreeNode *x) { if (x) { pre.push_back(x->val); po(x->left); po(x->right); } };
+        std::function<void(TreeNode *)> io = [&](TreeNode *x) { if (x) { io(x->left); in.push_back(x->val); io(x->right); } };
+        label(t); po(t); io(t);
+        return lc::lines(pre, in);
+    });
+}
+
+=== approach
+Preorder is `root, left subtree, right subtree`; inorder is `left subtree, root, right subtree`.
+
+Consume preorder from the front with a global index: the next value is the root of the current subtree. Its position `m` in inorder (found via a **value → index hash map**) splits the inorder range `[lo, hi]` into the left part `[lo, m-1]` and the right part `[m+1, hi]`. Build the left subtree first (preorder visits it first), then the right. Each node is created once: O(n) time, O(n) for the map, and O(h) recursion.
+
+=== solution
+class Solution {
+    unordered_map<int, int> pos;   // value -> index in inorder
+    int next = 0;                  // next preorder index to consume
+
+    TreeNode* build(vector<int>& pre, int lo, int hi) {
+        if (lo > hi) return nullptr;                 // empty inorder range
+        int rootVal = pre[next++];
+        int m = pos[rootVal];
+        TreeNode *root = new TreeNode(rootVal);
+        root->left = build(pre, lo, m - 1);          // preorder: left subtree comes first
+        root->right = build(pre, m + 1, hi);
+        return root;
+    }
+
+public:
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+        for (int i = 0; i < (int)inorder.size(); ++i) pos[inorder[i]] = i;
+        next = 0;
+        return build(preorder, 0, (int)inorder.size() - 1);
+    }
+};
+
+=== examples
+[3,9,20,15,7]
+[9,3,15,20,7]
+> [3,9,20,null,null,15,7]
+
+[-1]
+[-1]
+> [-1]
+
+=== tests
+[1,2]
+[2,1]
+> [1,2]
+
+[1,2]
+[1,2]
+> [1,null,2]
+
+[1,2,3]
+[3,2,1]
+> [1,2,null,3]
+
+[1,2,4,5,3,6,7]
+[4,2,5,1,6,3,7]
+> [1,2,3,4,5,6,7]
+
+@@@ problem 106 construct-binary-tree-from-inorder-and-postorder-traversal
+title: Construct Binary Tree from Inorder and Postorder Traversal
+difficulty: Medium
+topics: Array, Hash Table, Divide and Conquer, Tree, Binary Tree
+params: inorder, postorder
+time: O(n)
+space: O(n)
+bench: n=64..1048576 time=n space=n unit=number_of_nodes
+
+=== description
+Given the `inorder` and `postorder` traversals of a binary tree with **unique** values, reconstruct the tree and return its root.
+
+=== constraints
+- `1 <= inorder.length <= 3000`
+- `postorder.length == inorder.length`
+- `-3000 <= values <= 3000`, all values unique
+- both arrays are traversals of the same tree
+
+=== hints
+- The **last** postorder value is the root.
+- Reading postorder backwards gives `root, right subtree, left subtree`: build the right subtree first.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::buildTree);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        TreeNode *t = g.tree(n, 0, 0);
+        auto vals = g.distinct(n, -3 * n, 3 * n);
+        std::vector<int> in, post;
+        size_t k = 0;
+        std::function<void(TreeNode *)> label = [&](TreeNode *x) { if (x) { x->val = vals[k++]; label(x->left); label(x->right); } };
+        std::function<void(TreeNode *)> io = [&](TreeNode *x) { if (x) { io(x->left); in.push_back(x->val); io(x->right); } };
+        std::function<void(TreeNode *)> ps = [&](TreeNode *x) { if (x) { ps(x->left); ps(x->right); post.push_back(x->val); } };
+        label(t); io(t); ps(t);
+        return lc::lines(in, post);
+    });
+}
+
+=== approach
+Mirror image of the preorder version. Postorder is `left, right, root`, so reading it **from the back** yields roots in the order `root, right subtree, left subtree`. Take the next root from the back, split the inorder range at its position (hash map lookup), and build the **right** subtree before the left one.
+
+=== solution
+class Solution {
+    unordered_map<int, int> pos;   // value -> index in inorder
+    int next;                      // next postorder index (moving backwards)
+
+    TreeNode* build(vector<int>& post, int lo, int hi) {
+        if (lo > hi) return nullptr;
+        int rootVal = post[next--];
+        int m = pos[rootVal];
+        TreeNode *root = new TreeNode(rootVal);
+        root->right = build(post, m + 1, hi);   // backwards postorder: right subtree first
+        root->left = build(post, lo, m - 1);
+        return root;
+    }
+
+public:
+    TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+        for (int i = 0; i < (int)inorder.size(); ++i) pos[inorder[i]] = i;
+        next = (int)postorder.size() - 1;
+        return build(postorder, 0, (int)inorder.size() - 1);
+    }
+};
+
+=== examples
+[9,3,15,20,7]
+[9,15,7,20,3]
+> [3,9,20,null,null,15,7]
+
+[-1]
+[-1]
+> [-1]
+
+=== tests
+[2,1]
+[2,1]
+> [1,2]
+
+[1,2]
+[2,1]
+> [1,null,2]
+
+[4,2,5,1,6,3,7]
+[4,5,2,6,7,3,1]
+> [1,2,3,4,5,6,7]
+
+@@@ problem 117 populating-next-right-pointers-in-each-node-ii
+title: Populating Next Right Pointers in Each Node II
+difficulty: Medium
+topics: Linked List, Tree, Depth-First Search, Breadth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=number_of_nodes
+
+=== description
+Each node of a binary tree has an extra pointer `next`. Set every `next` to point to the node immediately to its **right on the same level**, or `NULL` if there is none. Initially all `next` pointers are `NULL`.
+
+The judge prints the result level by level by following `next` pointers, with `#` marking the end of each level.
+
+Follow-up: use only constant extra space (the recursion stack of a recursive solution does not count, but try without it).
+
+=== constraints
+- `0 <= number of nodes <= 6000`
+- `-100 <= Node.val <= 100`
+
+=== hints
+- Level-order BFS with a queue is straightforward but uses O(width) memory.
+- Once a level is linked by `next`, you can walk it like a linked list while linking the level below (use a dummy head for the next level).
+
+=== template
+// Definition for a Node (keep this in your file).
+class Node {
+public:
+    int val;
+    Node* left;
+    Node* right;
+    Node* next;
+
+    Node() : val(0), left(NULL), right(NULL), next(NULL) {}
+    Node(int _val) : val(_val), left(NULL), right(NULL), next(NULL) {}
+    Node(int _val, Node* _left, Node* _right, Node* _next)
+        : val(_val), left(_left), right(_right), next(_next) {}
+};
+
+class Solution {
+public:
+    Node* connect(Node* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        TreeNode *t = c.arg<TreeNode *>();
+        std::function<Node *(TreeNode *)> conv = [&](TreeNode *x) -> Node * {
+            return x ? new Node(x->val, conv(x->left), conv(x->right), nullptr) : nullptr;
+        };
+        Node *root = conv(t);
+        Node *res = nullptr;
+        Solution s;
+        c.time([&] { res = s.connect(root); });
+        // leftmost node of every level (from the tree structure itself)
+        std::vector<Node *> firsts;
+        std::vector<Node *> level;
+        if (root) level.push_back(root);
+        while (!level.empty()) {
+            firsts.push_back(level[0]);
+            std::vector<Node *> nxt;
+            for (auto *x : level) { if (x->left) nxt.push_back(x->left); if (x->right) nxt.push_back(x->right); }
+            level.swap(nxt);
+        }
+        std::string o = "[";
+        bool first = true;
+        size_t guard = 0;
+        for (auto *f : firsts) {
+            for (Node *p = f; p && guard < 20000000; p = p->next, ++guard) { o += (first ? "" : ",") + std::to_string(p->val); first = false; }
+            o += first ? "#" : ",#";
+            first = false;
+        }
+        (void)res;
+        c.out_text(o + "]");
+    });
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.tree(n, -100, 100)); });
+}
+
+=== approach
+Link the tree **level by level using the `next` pointers of the level above**, so no queue is needed.
+
+Keep `cur` walking the current level (already linked) as a linked list. For the level below, keep a **dummy head** and a `tail`: for each `cur`, append `cur->left` and `cur->right` (if present) to `tail->next`. When the current level is finished, the next level is fully linked and starts at `dummy.next`. Only a few pointers are used: O(1) extra space.
+
+=== solution
+// Definition for a Node.
+class Node {
+public:
+    int val;
+    Node* left;
+    Node* right;
+    Node* next;
+
+    Node() : val(0), left(NULL), right(NULL), next(NULL) {}
+    Node(int _val) : val(_val), left(NULL), right(NULL), next(NULL) {}
+    Node(int _val, Node* _left, Node* _right, Node* _next)
+        : val(_val), left(_left), right(_right), next(_next) {}
+};
+
+class Solution {
+public:
+    Node* connect(Node* root) {
+        Node *levelStart = root;
+        while (levelStart) {
+            Node dummy;                 // dummy.next = first node of the next level
+            Node *tail = &dummy;
+            for (Node *cur = levelStart; cur; cur = cur->next) {   // walk this level via next
+                if (cur->left)  { tail->next = cur->left;  tail = tail->next; }
+                if (cur->right) { tail->next = cur->right; tail = tail->next; }
+            }
+            levelStart = dummy.next;    // descend one level
+        }
+        return root;
+    }
+};
+
+=== examples
+[1,2,3,4,5,null,7]
+> [1,#,2,3,#,4,5,7,#]
+: Each level is printed by following next pointers; # ends a level.
+
+[]
+> []
+
+=== tests
+[1]
+> [1,#]
+
+[1,2]
+> [1,#,2,#]
+
+[1,2,3,4,null,null,5]
+> [1,#,2,3,#,4,5,#]
+
+[1,2,3,4,5,6,7,8,null,null,null,null,null,null,9]
+> [1,#,2,3,#,4,5,6,7,#,8,9,#]
+
+@@@ problem 114 flatten-binary-tree-to-linked-list
+title: Flatten Binary Tree to Linked List
+difficulty: Medium
+topics: Linked List, Stack, Tree, Depth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(1)
+bench: n=64..1048576 time=n space=1 unit=number_of_nodes
+
+=== description
+Flatten a binary tree **in place** into a "linked list" that uses `right` pointers as `next` and has every `left` pointer set to `null`. The nodes must appear in **preorder**.
+
+Follow-up: can you do it with O(1) extra space?
+
+=== constraints
+- `0 <= number of nodes <= 2000`
+- `-100 <= Node.val <= 100`
+
+=== hints
+- In preorder, a node's left subtree comes right after it, then its right subtree.
+- For each node with a left child: find the **rightmost** node of the left subtree, attach the right subtree there, and move the left subtree to the right.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    void flatten(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::flatten).print_arg(0);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.tree(n, -100, 100)); });
+}
+
+=== approach
+A Morris-style rewiring, O(1) extra memory. Walk down the right spine with `cur`. When `cur` has a left subtree:
+
+1. find the rightmost node `pre` of that left subtree (it's the last node of the subtree in preorder);
+2. attach `cur->right` after it: `pre->right = cur->right`;
+3. move the left subtree to the right: `cur->right = cur->left`, `cur->left = nullptr`.
+
+Then continue with `cur->right`. Each edge is traversed a constant number of times, so the total is O(n).
+
+=== solution
+class Solution {
+public:
+    void flatten(TreeNode* root) {
+        for (TreeNode *cur = root; cur; cur = cur->right) {
+            if (!cur->left) continue;
+            TreeNode *pre = cur->left;
+            while (pre->right) pre = pre->right;   // last node of the left subtree in preorder
+            pre->right = cur->right;               // right subtree follows it
+            cur->right = cur->left;                // left subtree comes right after cur
+            cur->left = nullptr;
+        }
+    }
+};
+
+=== examples
+[1,2,5,3,4,null,6]
+> [1,null,2,null,3,null,4,null,5,null,6]
+
+[]
+> []
+
+[0]
+> [0]
+
+=== tests
+[1,2]
+> [1,null,2]
+
+[1,null,2]
+> [1,null,2]
+
+[1,2,3]
+> [1,null,2,null,3]
+
+[1,2,null,3,4]
+> [1,null,2,null,3,null,4]
+
+@@@ problem 112 path-sum
+title: Path Sum
+difficulty: Easy
+topics: Tree, Depth-First Search, Breadth-First Search, Binary Tree
+params: root, targetSum
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+Given the `root` of a binary tree and an integer `targetSum`, return `true` if there is a **root-to-leaf** path whose values add up to `targetSum`. A leaf is a node with no children.
+
+=== constraints
+- `0 <= number of nodes <= 5000`
+- `-1000 <= Node.val <= 1000`
+- `-1000 <= targetSum <= 1000`
+
+=== hints
+- Subtract the current value from the target as you go down.
+- Only check the remaining sum at leaves; an empty tree has no paths at all.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    bool hasPathSum(TreeNode* root, int targetSum) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::hasPathSum);
+    h.gen([](lc::Gen &g, int n) {
+        TreeNode *t = g.tree(n, -10, 10);
+        int target = n > 40 ? 1000000 : g.irange(-20, 20);   // benchmark: unreachable target, full search
+        if (n <= 40 && t && g.coin(0.5)) {
+            int s = 0;
+            TreeNode *p = t;
+            while (p) { s += p->val; p = (p->left && (g.coin() || !p->right)) ? p->left : p->right; }
+            target = s;
+        }
+        return lc::lines(t, target);
+    });
+}
+
+=== approach
+Depth-first search carrying the **remaining** sum. At each node subtract its value. At a leaf, the path works iff the remainder is exactly zero. Otherwise, ask the children (either may succeed). Note that an empty tree returns `false` even for `targetSum == 0`: there is no path at all.
+
+=== solution
+class Solution {
+public:
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        if (!root) return false;
+        int rest = targetSum - root->val;
+        if (!root->left && !root->right) return rest == 0;   // leaf: path complete
+        return hasPathSum(root->left, rest) || hasPathSum(root->right, rest);
+    }
+};
+
+=== examples
+[5,4,8,11,null,13,4,7,2,null,null,null,1]
+22
+> true
+: The path 5 → 4 → 11 → 2 sums to 22.
+
+[1,2,3]
+5
+> false
+
+[]
+0
+> false
+: An empty tree has no root-to-leaf paths.
+
+=== tests
+[1]
+1
+> true
+
+[1,2]
+1
+> false
+
+[-2,null,-3]
+-5
+> true
+
+[1,-2,-3,1,3,-2,null,-1]
+-1
+> true
+
+@@@ problem 129 sum-root-to-leaf-numbers
+title: Sum Root to Leaf Numbers
+difficulty: Medium
+topics: Tree, Depth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+Every node of the binary tree holds a digit `0-9`. Each root-to-leaf path represents a number: the path `1 → 2 → 3` is `123`. Return the **sum** of all such numbers.
+
+The test data guarantees the answer fits in a 32-bit integer.
+
+=== constraints
+- `1 <= number of nodes <= 1000`
+- `0 <= Node.val <= 9`
+- the depth of the tree does not exceed 10
+
+=== hints
+- Pass the number formed so far down the recursion: `cur * 10 + node.val`.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int sumNumbers(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::sumNumbers);
+    h.gen([](lc::Gen &g, int n) {
+        TreeNode *t = g.tree(std::max(n, 1), 0, 9);
+        // keep numbers small: only nodes near the leaves carry non-zero digits
+        int keep = n > 40 ? 2 : 5;
+        std::function<int(TreeNode *)> height = [&](TreeNode *x) -> int {
+            if (!x) return 0;
+            int hgt = 1 + std::max(height(x->left), height(x->right));
+            if (hgt > keep) x->val = 0;
+            return hgt;
+        };
+        height(t);
+        return lc::lines(t);
+    });
+}
+
+=== approach
+DFS while carrying the number formed by the path so far: at a node, `cur = cur * 10 + val`. At a leaf, `cur` is a complete number: return it. Otherwise return the sum of the results from both children. Every node is visited once.
+
+=== solution
+class Solution {
+    int dfs(TreeNode *node, int cur) {
+        if (!node) return 0;
+        cur = cur * 10 + node->val;                         // append this digit
+        if (!node->left && !node->right) return cur;       // leaf: complete number
+        return dfs(node->left, cur) + dfs(node->right, cur);
+    }
+
+public:
+    int sumNumbers(TreeNode* root) { return dfs(root, 0); }
+};
+
+=== examples
+[1,2,3]
+> 25
+: 12 + 13 = 25.
+
+[4,9,0,5,1]
+> 1026
+: 495 + 491 + 40 = 1026.
+
+=== tests
+[0]
+> 0
+
+[1,0]
+> 10
+
+[9,9,9,9,9,9,9]
+> 3996
+
+@@@ problem 124 binary-tree-maximum-path-sum
+title: Binary Tree Maximum Path Sum
+difficulty: Hard
+topics: Dynamic Programming, Tree, Depth-First Search, Binary Tree
+params: root
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+A **path** in a binary tree is a sequence of nodes where each adjacent pair is connected by an edge, and no node appears twice. A path need not pass through the root and must contain at least one node.
+
+Return the maximum possible **sum of values** along any path.
+
+=== constraints
+- `1 <= number of nodes <= 3 * 10^4`
+- `-1000 <= Node.val <= 1000`
+
+=== hints
+- Every path has a unique highest node. At that node, the path is: best downward chain on the left + node + best downward chain on the right.
+- Return the best **downward** chain to the parent, but update a global answer with the "bent" path.
+- Negative chains are worth dropping: use `max(0, chain)`.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int maxPathSum(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::maxPathSum);
+    h.gen([](lc::Gen &g, int n) { return lc::lines(g.tree(std::max(n, 1), -1000, 1000)); });
+}
+
+=== approach
+Post-order DFS. For each node compute `gain(node)`: the best sum of a path that **starts at this node and goes down** into at most one child: `val + max(0, gain(left), gain(right))`.
+
+The best path whose highest node is this node combines both sides: `val + max(0, gain(left)) + max(0, gain(right))`. Update the global answer with that value. Because every path has exactly one highest node, the global maximum over all nodes is the answer.
+
+=== solution
+class Solution {
+    int best = INT_MIN;
+
+    // Best downward path starting at node (may stop at node itself).
+    int gain(TreeNode *node) {
+        if (!node) return 0;
+        int l = max(0, gain(node->left));      // drop negative branches
+        int r = max(0, gain(node->right));
+        best = max(best, node->val + l + r);   // path that bends at this node
+        return node->val + max(l, r);          // a parent can extend only one side
+    }
+
+public:
+    int maxPathSum(TreeNode* root) {
+        best = INT_MIN;
+        gain(root);
+        return best;
+    }
+};
+
+=== examples
+[1,2,3]
+> 6
+: The path 2 → 1 → 3 sums to 6.
+
+[-10,9,20,null,null,15,7]
+> 42
+: The path 15 → 20 → 7 sums to 42.
+
+=== tests
+[-3]
+> -3
+
+[2,-1]
+> 2
+
+[-2,-1]
+> -1
+
+[5,4,8,11,null,13,4,7,2,null,null,null,1]
+> 48
+
+[1,-2,3]
+> 4
+
+@@@ problem 173 binary-search-tree-iterator
+title: Binary Search Tree Iterator
+difficulty: Medium
+topics: Stack, Tree, Design, Binary Search Tree, Iterator
+params: operations, arguments
+time: O(1) amortized per operation
+space: O(h)
+bench: n=64..524288 time=n space=logn unit=number_of_nodes_(all_visited)
+
+=== description
+Implement `BSTIterator`, an iterator over the **in-order** traversal of a binary search tree:
+
+- `BSTIterator(TreeNode* root)` initializes the iterator. The pointer starts *before* the smallest element.
+- `bool hasNext()` returns `true` if there is a next element.
+- `int next()` moves to the next element and returns it. It is only called when a next element exists.
+
+Follow-up: `next()` and `hasNext()` in **O(1) amortized** time using **O(h)** memory, where `h` is the tree height.
+
+=== constraints
+- `1 <= number of nodes <= 10^5`
+- `0 <= Node.val <= 10^6`
+- at most `10^5` calls to `hasNext` and `next`
+
+=== hints
+- Simulate the recursion of an in-order traversal with an explicit stack.
+- Keep the stack holding the "left spine" of the unvisited part: after popping a node, push the left spine of its right child.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class BSTIterator {
+public:
+    BSTIterator(TreeNode* root) {
+
+    }
+
+    int next() {
+
+    }
+
+    bool hasNext() {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.design<BSTIterator, TreeNode *>()
+        .method("next", &BSTIterator::next)
+        .method("hasNext", &BSTIterator::hasNext);
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 1);
+        lc::Ops ops;
+        ops.add("BSTIterator", g.bst(n, 0, std::max(10, 4 * n)));
+        for (int left = n; left > 0;) {
+            if (g.coin(0.3)) ops.add("hasNext");
+            else { ops.add("next"); --left; }
+        }
+        ops.add("hasNext");
+        return ops.lines();
+    });
+}
+
+=== approach
+Simulate in-order traversal with an explicit **stack**. The invariant: the stack holds the path of "left spine" nodes whose left subtrees are done but which themselves haven't been returned yet; the top is the next smallest element.
+
+- constructor: push the left spine of the root;
+- `next()`: pop the top node (the answer), then push the left spine of its right child;
+- `hasNext()`: the stack is non-empty.
+
+Each node is pushed and popped once over the whole traversal, so `next` is O(1) amortized, and the stack never exceeds the tree height.
+
+=== solution
+class BSTIterator {
+    vector<TreeNode*> st;   // left spine of the unvisited part; top = next smallest
+
+    void pushLeft(TreeNode *node) {
+        for (; node; node = node->left) st.push_back(node);
+    }
+
+public:
+    BSTIterator(TreeNode* root) { pushLeft(root); }
+
+    int next() {
+        TreeNode *node = st.back();
+        st.pop_back();
+        pushLeft(node->right);      // its right subtree comes next in order
+        return node->val;
+    }
+
+    bool hasNext() { return !st.empty(); }
+};
+
+=== examples
+["BSTIterator","next","next","hasNext","next","hasNext","next","hasNext","next","hasNext"]
+[[[7,3,15,null,null,9,20]],[],[],[],[],[],[],[],[],[]]
+> [null,3,7,true,9,true,15,true,20,false]
+
+=== tests
+["BSTIterator","hasNext","next","hasNext"]
+[[[1]],[],[],[]]
+> [null,true,1,false]
+
+["BSTIterator","next","next","next","hasNext"]
+[[[2,1,3]],[],[],[],[]]
+> [null,1,2,3,false]
+
+["BSTIterator","next","next","next","next","hasNext"]
+[[[1,null,2,null,3,null,4]],[],[],[],[],[]]
+> [null,1,2,3,4,false]
+
+@@@ problem 222 count-complete-tree-nodes
+title: Count Complete Tree Nodes
+difficulty: Easy
+topics: Binary Search, Bit Manipulation, Tree, Binary Tree
+params: root
+time: O(log² n)
+space: O(log n)
+bench: n=64..1048576 time=log2n space=logn unit=number_of_nodes
+
+=== description
+Given the `root` of a **complete** binary tree, return the number of nodes.
+
+In a complete binary tree every level, except possibly the last, is completely filled, and all nodes in the last level are as far left as possible.
+
+Design an algorithm that runs in **less than O(n)** time.
+
+=== constraints
+- `0 <= number of nodes <= 5 * 10^4`
+- `0 <= Node.val <= 5 * 10^4`
+- the tree is complete
+
+=== hints
+- If the leftmost depth equals the rightmost depth, the tree is perfect: it has `2^h - 1` nodes.
+- Otherwise count `1 + count(left) + count(right)`. At least one of the two subtrees is perfect, so only one side recurses deeply.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int countNodes(TreeNode* root) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.solve(&Solution::countNodes);
+    h.readonly();
+    h.gen([](lc::Gen &g, int n) {
+        if (n > 40) n = n - 1 - g.irange(0, n / 3);   // some incomplete last level
+        std::vector<int> v(n);
+        std::iota(v.begin(), v.end(), 1);
+        return lc::lines(v);
+    });
+}
+
+=== approach
+Measure the depth going always-left (`hl`) and always-right (`hr`). If they are equal, the tree is **perfect** and has `2^hl - 1` nodes: no need to look inside. Otherwise return `1 + countNodes(left) + countNodes(right)`.
+
+In a complete tree, at least one child subtree is perfect, so that call returns after an O(log n) depth check; only one path goes deep. That gives O(log n) levels × O(log n) per depth check = **O(log² n)**.
+
+=== solution
+class Solution {
+public:
+    int countNodes(TreeNode* root) {
+        if (!root) return 0;
+        int hl = 0, hr = 0;
+        for (TreeNode *p = root; p; p = p->left) ++hl;    // leftmost depth
+        for (TreeNode *p = root; p; p = p->right) ++hr;   // rightmost depth
+        if (hl == hr) return (1 << hl) - 1;               // perfect tree
+        return 1 + countNodes(root->left) + countNodes(root->right);
+    }
+};
+
+=== examples
+[1,2,3,4,5,6]
+> 6
+
+[]
+> 0
+
+[1]
+> 1
+
+=== tests
+[1,2]
+> 2
+
+[1,2,3]
+> 3
+
+[1,2,3,4,5,6,7,8]
+> 8
+
+[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+> 15
+
+@@@ problem 236 lowest-common-ancestor-of-a-binary-tree
+title: Lowest Common Ancestor of a Binary Tree
+difficulty: Medium
+topics: Tree, Depth-First Search, Binary Tree
+params: root, p, q
+time: O(n)
+space: O(h)
+bench: n=64..1048576 time=n space=logn unit=number_of_nodes
+
+=== description
+Given a binary tree and two of its nodes `p` and `q`, return their **lowest common ancestor** (LCA): the lowest node that has both `p` and `q` as descendants. A node counts as a descendant of itself.
+
+In the input, `p` and `q` are given by their (unique) values; the judge passes the corresponding node pointers to your function and prints the value of the node you return.
+
+=== constraints
+- `2 <= number of nodes <= 10^5`
+- `-10^9 <= Node.val <= 10^9`, all values unique
+- `p != q`, and both exist in the tree
+
+=== hints
+- Search both subtrees recursively. What does it mean if `p` is found in one subtree and `q` in the other?
+- Return the node itself if it equals `p` or `q`.
+
+=== template
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+
+    }
+};
+
+=== driver
+LC_DRIVER {
+    h.custom([](lc::Case &c) {
+        TreeNode *root = c.arg<TreeNode *>();
+        int pv = c.arg<int>(), qv = c.arg<int>();
+        TreeNode *p = lc::find_node(root, pv), *q = lc::find_node(root, qv);
+        if (!p || !q) throw lc::InputError("p and q must be values present in the tree");
+        TreeNode *r = nullptr;
+        Solution s;
+        c.time([&] { r = s.lowestCommonAncestor(root, p, q); });
+        if (r) c.out(r->val); else c.out_text("null");
+    });
+    h.gen([](lc::Gen &g, int n) {
+        n = std::max(n, 2);
+        TreeNode *t = g.tree(n, 0, 0);
+        auto vals = g.distinct(n, -1000000000, 1000000000);
+        size_t k = 0;
+        std::function<void(TreeNode *)> label = [&](TreeNode *x) { if (x) { x->val = vals[k++]; label(x->left); label(x->right); } };
+        label(t);
+        int a = g.irange(0, n - 1), b = g.irange(0, n - 2);
+        if (b >= a) ++b;
+        return lc::lines(t, vals[a], vals[b]);
+    });
+}
+
+=== approach
+Recursive search returning "what I found in this subtree":
+
+- if the node is null, `p` or `q`, return it;
+- otherwise search both children. If **both** return non-null, `p` and `q` are in different subtrees, so this node is the LCA. If only one side is non-null, pass that result up (it's either the LCA already found below or one of the targets).
+
+Each node is visited once: O(n) time, O(h) stack.
+
+=== solution
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if (!root || root == p || root == q) return root;
+        TreeNode *left = lowestCommonAncestor(root->left, p, q);
+        TreeNode *right = lowestCommonAncestor(root->right, p, q);
+        if (left && right) return root;   // p and q are on different sides
+        return left ? left : right;       // pass up whatever was found
+    }
+};
+
+=== examples
+[3,5,1,6,2,0,8,null,null,7,4]
+5
+1
+> 3
+
+[3,5,1,6,2,0,8,null,null,7,4]
+5
+4
+> 5
+: A node is a descendant of itself, so 5 is the LCA of 5 and 4.
+
+[1,2]
+1
+2
+> 1
+
+=== tests
+[1,2,3]
+2
+3
+> 1
+
+[1,2,null,3,null,4]
+4
+3
+> 3
+
+[3,5,1,6,2,0,8,null,null,7,4]
+7
+8
+> 3
+
+[3,5,1,6,2,0,8,null,null,7,4]
+6
+4
+> 5
