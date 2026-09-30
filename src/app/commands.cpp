@@ -239,6 +239,15 @@ int App::cmd_submit(const Args &a) {
     sp.stop();
     cout << "\n" << ui::rule(p->display_id() + ". " + p->title + ui::dim("  submission")) << "\n";
     view_report(*p, r);
+    // Save a snapshot of this submission (judge errors are the judge's fault, not a submission).
+    if (r.verdict != Verdict::JudgeError) {
+        bool ran = r.verdict == Verdict::Accepted && r.bench.ran;
+        history_->add(*p, path, verdict_name(r.verdict), r.passed(), r.total(), r.max_ms,
+                      ran ? r.bench.time.cls : "", ran ? r.bench.space.cls : "");
+        int n = (int)history_->for_problem(p->key).size();
+        cout << "  " << ui::dim("Saved as submission #" + std::to_string(n) + "  ") << ui::code("leet history " + p->display_id())
+             << "\n";
+    }
     if (r.verdict == Verdict::Accepted) {
         if (o.bench) view_bench(*p, r.bench);
         bool first = progress_->status(p->key) != "solved";

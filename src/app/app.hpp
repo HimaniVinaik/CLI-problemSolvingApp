@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "core/config.hpp"
+#include "core/history.hpp"
 #include "core/repository.hpp"
 #include "core/workspace.hpp"
 #include "judge/judge.hpp"
@@ -41,6 +42,7 @@ private:
     Repository repo_;
     std::unique_ptr<Workspace> ws_;
     std::unique_ptr<Progress> progress_;
+    std::unique_ptr<History> history_;
     std::unique_ptr<judge::Judge> judge_;
     const Problem *current_ = nullptr;
     bool in_shell_ = false;
@@ -67,6 +69,9 @@ private:
     int cmd_config(const Args &a);
     int cmd_help(const Args &a);
     int cmd_next(const Args &a, int dir);
+    int cmd_history(const Args &a);   // history_cmds.cpp
+    int cmd_restore(const Args &a);
+    int cmd_mark(const Args &a, bool done);
     int cmd_dev(const Args &a);   // dev.cpp
     int shell();                  // shell.cpp
 

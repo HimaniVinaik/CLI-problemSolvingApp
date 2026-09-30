@@ -58,6 +58,7 @@ App::App() {
     cfg_ = Config::load();
     ws_ = std::make_unique<Workspace>(cfg_);
     progress_ = std::make_unique<Progress>(cfg_);
+    history_ = std::make_unique<History>(cfg_);
     judge_ = std::make_unique<judge::Judge>(cfg_);
 }
 
@@ -85,7 +86,7 @@ int App::main(int argc, char **argv) {
 
 std::vector<std::string> App::command_names() const {
     return {"list", "show", "edit", "test", "run", "submit", "analyze", "solution", "hint", "stats", "random",
-            "topics", "reset", "path", "config", "help", "next", "prev", "open", "clear", "quit"};
+            "topics", "reset", "history", "restore", "done", "undone", "path", "config", "help", "next", "prev", "open", "clear", "quit"};
 }
 
 std::string App::prompt() const {
@@ -116,6 +117,10 @@ int App::dispatch(const std::vector<std::string> &argv) {
     if (c == "random" || c == "pick") return cmd_random(a);
     if (c == "topics" || c == "categories" || c == "cats") return cmd_categories(a);
     if (c == "reset") return cmd_reset(a);
+    if (c == "history" || c == "submissions" || c == "subs") return cmd_history(a);
+    if (c == "restore") return cmd_restore(a);
+    if (c == "done" || c == "mark") return cmd_mark(a, true);
+    if (c == "undone" || c == "unmark" || c == "todo") return cmd_mark(a, false);
     if (c == "path" || c == "where") return cmd_path(a);
     if (c == "config" || c == "doctor") return cmd_config(a);
     if (c == "next" || c == "n") return cmd_next(a, +1);
@@ -200,6 +205,16 @@ int App::cmd_help(const Args &a) {
             {"hint <id> [k]", "Reveal hints one by one", ""},
             {"solution <id>", "Commented reference solution + explanation", ""},
             {"reset <id>", "Restore the starter template (backs up your file)", ""},
+        }},
+        {"Track", {
+            {"history [id] [n]", "Your saved submissions (all, one problem, or view #n)",
+             "Every submit stores a snapshot of your code with its verdict.\n"
+             "`leet history` shows recent submissions, `leet history 1` those of problem 1,\n"
+             "`leet history 1 3` prints the code of submission #3."},
+            {"restore <id> [n]", "Put an old submission back into your file",
+             "Without n: the latest accepted submission (or the latest one). Your current file is backed up."},
+            {"done <id>", "Mark a problem as done by hand", "Counts as solved in list/stats. `leet undone <id>` reverts it."},
+            {"undone <id>", "Mark a problem as not done", ""},
         }},
         {"Other", {
             {"stats", "Progress dashboard", ""},

@@ -77,7 +77,8 @@ void App::view_statement(const Problem &p) const {
              << ui::accent2(p.space) << "\n";
     }
     std::string st = progress_->status(p.key);
-    std::string status = st == "solved" ? ui::ok(std::string(ui::sym().check) + " solved")
+    auto pe = progress_->get(p.key);
+    std::string status = st == "solved" ? ui::ok(std::string(ui::sym().check) + " solved") + (pe && pe->manual ? ui::dim(" (marked by hand)") : "")
                          : st == "attempted" ? ui::warn(std::string(ui::sym().half) + " attempted")
                                              : ui::dim("not started");
     cout << "  " << ui::bold("Status") << ui::dim(" ") << status;

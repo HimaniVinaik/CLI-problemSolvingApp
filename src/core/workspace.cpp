@@ -49,14 +49,16 @@ std::string Workspace::ensure_solution(const Problem &p) const {
     return path;
 }
 
-std::string Workspace::reset_solution(const Problem &p) const {
+std::string Workspace::reset_solution(const Problem &p) const { return replace_solution(p, starter(p)); }
+
+std::string Workspace::replace_solution(const Problem &p, const std::string &content) const {
     std::string path = solution_path(p);
     if (fs::exists(path)) {
         std::string backup = fs::join(fs::join(cfg_.state_dir, "backups"),
                                       p.file_stem() + "." + std::to_string(std::time(nullptr)) + "." + p.ext());
         if (auto c = fs::read_file(path)) fs::write_file(backup, *c);
     }
-    fs::write_file(path, starter(p));
+    fs::write_file(path, content);
     return path;
 }
 
@@ -111,6 +113,7 @@ Progress::Progress(const Config &cfg) : path_(fs::join(cfg.state_dir, "progress.
         }
         e.time_class = f[5];
         e.space_class = f[6];
+        if (f.size() >= 8) e.manual = f[7] == "manual";
         data_[f[0]] = e;
     }
 }
@@ -132,12 +135,28 @@ void Progress::record(const std::string &key, bool accepted, double ms, const st
     e.last = (long long)std::time(nullptr);
     if (accepted) {
         e.status = "solved";
+        e.manual = false;
         if (e.best_ms == 0 || ms < e.best_ms) e.best_ms = ms;
         if (!tcls.empty()) e.time_class = tcls;
         if (!scls.empty()) e.space_class = scls;
         g_days.insert(today());
     } else if (e.status != "solved") {
         e.status = "attempted";
+    }
+    save();
+}
+
+void Progress::mark(const std::string &key, bool done) {
+    auto &e = data_[key];
+    e.last = (long long)std::time(nullptr);
+    if (done) {
+        if (e.status != "solved") e.manual = true;   // keep a judge-verified solve as such
+        e.status = "solved";
+        g_days.insert(today());
+    } else {
+        e.status = e.attempts > 0 ? "attempted" : "";
+        e.manual = false;
+        if (e.status.empty()) data_.erase(key);
     }
     save();
 }
@@ -149,13 +168,13 @@ void Progress::clear(const std::string &key) {
 
 bool Progress::save() const {
     std::ostringstream o;
-    o << "# leet progress: key status attempts last best_ms time_class space_class\n";
+    o << "# leet progress: key status attempts last best_ms time_class space_class source\n";
     std::vector<std::string> days(g_days.begin(), g_days.end());
     o << "#days " << str::join(days, ",") << "\n";
     for (auto &[k, e] : data_) {
         o << k << '\t' << e.status << '\t' << e.attempts << '\t' << e.last << '\t' << e.best_ms << '\t'
-          << (e.time_class.empty() ? "-" : e.time_class) << '\t' << (e.space_class.empty() ? "-" : e.space_class)
-          << '\n';
+          << (e.time_class.empty() ? "-" : e.time_class) << '\t' << (e.space_class.empty() ? "-" : e.space_class) << '\t'
+          << (e.manual ? "manual" : "judge") << '\n';
     }
     return fs::write_file(path_, o.str());
 }

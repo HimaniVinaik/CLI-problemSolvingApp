@@ -43,6 +43,9 @@ make install PREFIX=$HOME/.local   # or install for your user only
 ```
 
 Your solutions go to `~/leet-workspace/` (override with `LEET_WORKSPACE=/some/dir`).
+Everything you do is saved there. That includes your progress in `.leet/progress.tsv`,
+every submission's code and verdict in `.leet/submissions/` (indexed by `.leet/submissions.tsv`),
+and backups of files replaced by `reset`/`restore` in `.leet/backups/`.
 
 ## Usage
 
@@ -63,6 +66,11 @@ leet analyze 1         # only the complexity analysis
 leet hint 1            # first hint;  leet hint 1 2  for the second
 leet solution 1        # commented reference solution and explanation
 leet stats             # progress dashboard
+leet history           # your recent submissions (every submit is saved with its code)
+leet history 1         # all submissions of problem 1: verdict, tests, measured complexity
+leet history 1 3       # view the code of submission #3
+leet restore 1 [3]     # put submission #3 (default: latest accepted) back into your file
+leet done 1            # mark a problem as done by hand;  leet undone 1  reverts it
 leet random -d medium  # pick an unsolved problem
 leet next              # go to the next problem in list order
 leet reset 1           # restore the starter template (your file is backed up)

@@ -15,10 +15,12 @@ add_executable(leet
   src/app/app.cpp
   src/app/commands.cpp
   src/app/dev.cpp
+  src/app/history_cmds.cpp
   src/app/lineedit.cpp
   src/app/shell.cpp
   src/app/views.cpp
   src/core/config.cpp
+  src/core/history.cpp
   src/core/problem.cpp
   src/core/repository.cpp
   src/core/workspace.cpp
